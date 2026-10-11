@@ -19,3 +19,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+This project drives a locally installed copy of JianyingPro's engine DLL
+(videoeditor.dll). It ships no binary, resource or source code belonging to
+JianyingPro / CapCut. You are responsible for complying with that software's
+licence and with the laws that apply to you.
