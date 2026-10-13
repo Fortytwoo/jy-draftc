@@ -47,6 +47,11 @@ if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
 Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip
 Remove-Item -LiteralPath $stage -Recurse -Force
 
+# Release sidecar: <sha256>  <zip name>, the shape sha256sum -c expects.
+$hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash
+Set-Content -LiteralPath "$zip.sha256" -NoNewline -Encoding ASCII -Value ("{0}  {1}`n" -f $hash, (Split-Path $zip -Leaf))
+
 Write-Host ''
 Write-Host ("[package] {0}  ({1:N0} bytes)" -f $zip, (Get-Item -LiteralPath $zip).Length)
+Write-Host ("[package] {0}.sha256  {1}" -f $zip, $hash)
 exit 0

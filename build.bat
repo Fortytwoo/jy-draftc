@@ -18,7 +18,7 @@ if not exist "%VS_ROOT%\VC\Auxiliary\Build\vcvars64.bat" goto no_vs
 call "%VS_ROOT%\VC\Auxiliary\Build\vcvars64.bat" >nul
 if errorlevel 1 goto no_vs
 
-set "SRC=src\11.5.0.14471"
+set "SRC=src\11.6.0.14552"
 if not exist build mkdir build
 
 cl /nologo /std:c++20 /O2 /Oi /GL /Gy /Gw /GR- /MT /EHsc /GS /guard:cf /DNDEBUG /utf-8 /W4 /permissive- ^
