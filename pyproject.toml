@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "jy-edit-mcp"
+version = "0.4.0"
+description = "Composable local video editing tools for Jianying and jy-draftc"
+readme = "docs/jy-edit-mcp.md"
+requires-python = ">=3.12,<3.14"
+license = "MIT"
+dependencies = [
+  "mcp>=1.29,<2",
+  "pydantic>=2.11,<3",
+  "filelock>=3.18,<4",
+  "pyjianyingdraft @ git+https://github.com/GuanYixuan/pyJianYingDraft.git@1e228479dda361e312e85f6037002346cf6dca9a",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<9", "pytest-asyncio>=0.26,<1", "ruff>=0.12,<1"]
+
+[project.scripts]
+jy-edit-mcp = "jy_edit_mcp.server:main"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jy_edit_mcp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 110

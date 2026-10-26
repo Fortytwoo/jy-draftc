@@ -1,0 +1,3143 @@
+diff --git a/.gitignore b/.gitignore
+index 139e412..a2017dc 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -101,3 +101,5 @@ YOUR_MEMORY_FILE_PATH
+ .sessions/
+ .devtools
+ .omo/
++
++resources/yoyoking/
+diff --git a/electron-builder.cn.config.cjs b/electron-builder.cn.config.cjs
+index d3f3563..cbc879e 100644
+--- a/electron-builder.cn.config.cjs
++++ b/electron-builder.cn.config.cjs
+@@ -1,19 +1,12 @@
+-const { CHINA_EDITION, getReleaseChannel } = require('./scripts/release/edition')
+-
+-module.exports = async function createChinaEditionConfig({ packageMetadata }) {
+-  const { version } = await packageMetadata.value
++const { CHINA_EDITION } = require('./scripts/release/edition')
+ 
++module.exports = async function createChinaEditionConfig() {
+   return {
+     extends: './electron-builder.yml',
+-    appId: 'com.cherryai.cherrystudio.cn',
++    appId: 'local.yoyoking.studio.cn',
+     extraMetadata: {
+       cherryEdition: CHINA_EDITION
+     },
+-    publish: {
+-      provider: 'generic',
+-      url: 'https://releases.cherry-ai.com',
+-      useMultipleRangeRequest: false,
+-      channel: getReleaseChannel(version, CHINA_EDITION)
+-    }
++    publish: null
+   }
+ }
+diff --git a/electron-builder.yml b/electron-builder.yml
+index aba1d72..6b2b9b8 100644
+--- a/electron-builder.yml
++++ b/electron-builder.yml
+@@ -1,5 +1,5 @@
+-appId: com.kangfenmao.CherryStudio
+-productName: Cherry Studio
++appId: local.yoyoking.studio
++productName: Yoyoking Studio
+ extraMetadata:
+   cherryEdition: global
+ electronLanguages:
+@@ -18,7 +18,7 @@ directories:
+ protocols:
+   - name: Cherry Studio
+     schemes:
+-      - cherrystudio
++      - yoyokingstudio
+ files:
+   - "**/*"
+   - "!**/node_modules/@anthropic-ai/claude-agent-sdk-*/**"
+@@ -108,6 +108,8 @@ asarUnpack:
+   - "node_modules/node-screenshots-*/**" # native N-API binary must be unpacked for runtime loading
+   - "node_modules/node-mac-permissions/**" # native N-API binary must be unpacked for runtime loading
+ extraResources:
++  - from: resources/yoyoking
++    to: yoyoking
+   - from: "src/main/ai/voice/localAdapters/NOTICE.txt"
+     to: "voice-audio/NOTICE.txt"
+   - from: "migrations/sqlite-drizzle"
+@@ -115,7 +117,7 @@ extraResources:
+   - from: "packages/provider-registry/data"
+     to: "provider-registry"
+ win:
+-  executableName: Cherry Studio
++  executableName: Yoyoking Studio
+   artifactName: ${productName}-${version}-${arch}-setup.${ext}
+   extraResources:
+     # before-pack adds system-speech only for x64; extraResources .exe files use signtoolOptions below.
+@@ -130,8 +132,8 @@ win:
+     - .node
+   verifyUpdateCodeSignature: false
+ nsis:
+-  # Preserve the existing global installer identity so either edition replaces the same Windows installation.
+-  guid: 41a4ccd8-bcc0-5710-9eee-0e164da68057
++  # Both derivative editions share their own installer identity, separate from Cherry Studio.
++  guid: 813bc528-34ca-4b1a-9d12-ac96599c74a6
+   artifactName: ${productName}-${version}-${arch}-setup.${ext}
+   shortcutName: ${productName}
+   uninstallDisplayName: ${productName}
+@@ -186,10 +188,7 @@ rpm:
+   # Workaround for electron build issue on rpm package:
+   # https://github.com/electron/forge/issues/3594
+   fpm: ["--rpm-rpmbuild-define=_build_id_links none"]
+-publish:
+-  provider: generic
+-  url: https://releases.cherry-ai.com
+-  useMultipleRangeRequest: false
++publish: null
+ electronDownload:
+   mirror: https://npmmirror.com/mirrors/electron/
+ beforePack: scripts/packaging/before-pack.js
+diff --git a/package.json b/package.json
+index cc23d76..7d283dc 100644
+--- a/package.json
++++ b/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "CherryStudio",
++  "name": "YoyokingStudio",
+   "version": "2.1.8",
+   "private": true,
+   "description": "A powerful AI assistant for producer.",
+@@ -41,6 +41,7 @@
+     "build:win:cn": "pnpm run build:cn && electron-builder --config electron-builder.cn.config.cjs --win --x64 --arm64",
+     "build:win:x64": "dotenv pnpm run build && electron-builder --win --x64",
+     "build:win:x64:cn": "pnpm run build:cn && electron-builder --config electron-builder.cn.config.cjs --win --x64",
++    "build:yoyoking": "electron-vite build",
+     "change:scope": "node scripts/docsGovernance/change-scope.mjs",
+     "changeset": "changeset",
+     "changeset:check": "node scripts/release/check-changesets.mjs",
+@@ -60,6 +61,7 @@
+     "dev": "pnpm prepare:system-speech && pnpm rebuild:electron && pnpm download:binaries && pnpm run build:utility-process && dotenv electron-vite dev",
+     "dev:cn": "dotenv -v CHERRY_EDITION=cn -- pnpm dev",
+     "dev:watch": "pnpm prepare:system-speech && pnpm rebuild:electron && pnpm download:binaries && pnpm run build:utility-process && dotenv electron-vite dev -- -w",
++    "dev:yoyoking": "electron-vite dev",
+     "docs:affected": "node scripts/docsGovernance/find-affected-docs.mjs",
+     "docs:check": "pnpm docs:check-links && pnpm docs:check-structure && pnpm docs:check-frontmatter && pnpm docs:check-notes && pnpm docs:check-pairing && pnpm docs:check-terminology && pnpm docs:check-index",
+     "docs:check-frontmatter": "tsx scripts/docsGovernance/verify-doc-frontmatter.ts",
+@@ -594,5 +596,6 @@
+     "node": ">=24.12.0"
+   },
+   "packageManager": "pnpm@12.6.0+sha512.3ef68f951cb111ac204b4a5a16f0b2ddf0da56a96e0413e81d855d9f0b55ef926714709028e1cd00c405c2c5fb7b9e8ec4dc46777c805d0373c2f2ff00fd20ec",
+-  "desktopName": "CherryStudio.desktop"
++  "desktopName": "CherryStudio.desktop",
++  "productName": "Yoyoking Studio"
+ }
+diff --git a/scripts/data-classify/data/target-key-definitions.json b/scripts/data-classify/data/target-key-definitions.json
+index 6fa3fec..98a818a 100644
+--- a/scripts/data-classify/data/target-key-definitions.json
++++ b/scripts/data-classify/data/target-key-definitions.json
+@@ -296,11 +296,30 @@
+       "targetKey": "ui.sidebar.favorites",
+       "type": "PreferenceTypes.SidebarFavoriteItem[]",
+       "defaultValue": [
+-        { "id": "agents", "type": "app" },
+-        { "id": "assistants", "type": "app" },
+-        { "id": "translate", "type": "app" },
+-        { "id": "paintings", "type": "app" },
+-        { "id": "knowledge", "type": "app" }
++        {
++          "id": "yoyoking",
++          "type": "app"
++        },
++        {
++          "id": "agents",
++          "type": "app"
++        },
++        {
++          "id": "assistants",
++          "type": "app"
++        },
++        {
++          "id": "translate",
++          "type": "app"
++        },
++        {
++          "id": "paintings",
++          "type": "app"
++        },
++        {
++          "id": "knowledge",
++          "type": "app"
++        }
+       ],
+       "status": "classified",
+       "description": "Legacy sidebar favorites, preserved as the source for shortcut migration"
+@@ -309,29 +328,70 @@
+       "targetKey": "ui.sidebar_shortcut",
+       "type": "PreferenceTypes.SidebarShortcutItem[]",
+       "defaultValue": [
++        {
++          "id": "sidebar-shortcut:core.app:yoyoking",
++          "target": {
++            "kind": "resource",
++            "locator": {
++              "providerId": "core.app",
++              "resourceId": "yoyoking"
++            }
++          },
++          "type": "shortcut"
++        },
+         {
+           "id": "sidebar-shortcut:core.app:agents",
+-          "target": { "kind": "resource", "locator": { "providerId": "core.app", "resourceId": "agents" } },
++          "target": {
++            "kind": "resource",
++            "locator": {
++              "providerId": "core.app",
++              "resourceId": "agents"
++            }
++          },
+           "type": "shortcut"
+         },
+         {
+           "id": "sidebar-shortcut:core.app:assistants",
+-          "target": { "kind": "resource", "locator": { "providerId": "core.app", "resourceId": "assistants" } },
++          "target": {
++            "kind": "resource",
++            "locator": {
++              "providerId": "core.app",
++              "resourceId": "assistants"
++            }
++          },
+           "type": "shortcut"
+         },
+         {
+           "id": "sidebar-shortcut:core.app:translate",
+-          "target": { "kind": "resource", "locator": { "providerId": "core.app", "resourceId": "translate" } },
++          "target": {
++            "kind": "resource",
++            "locator": {
++              "providerId": "core.app",
++              "resourceId": "translate"
++            }
++          },
+           "type": "shortcut"
+         },
+         {
+           "id": "sidebar-shortcut:core.app:paintings",
+-          "target": { "kind": "resource", "locator": { "providerId": "core.app", "resourceId": "paintings" } },
++          "target": {
++            "kind": "resource",
++            "locator": {
++              "providerId": "core.app",
++              "resourceId": "paintings"
++            }
++          },
+           "type": "shortcut"
+         },
+         {
+           "id": "sidebar-shortcut:core.app:knowledge",
+-          "target": { "kind": "resource", "locator": { "providerId": "core.app", "resourceId": "knowledge" } },
++          "target": {
++            "kind": "resource",
++            "locator": {
++              "providerId": "core.app",
++              "resourceId": "knowledge"
++            }
++          },
+           "type": "shortcut"
+         }
+       ],
+@@ -689,7 +749,10 @@
+       "targetKey": "shortcut.chat.input.focus",
+       "type": "PreferenceTypes.PreferenceShortcutType",
+       "defaultValue": {
+-        "binding": ["CommandOrControl", "I"],
++        "binding": [
++          "CommandOrControl",
++          "I"
++        ],
+         "enabled": true
+       },
+       "status": "classified",
+@@ -1041,6 +1104,40 @@
+       "defaultValue": "AltLeft+ControlLeft",
+       "status": "classified",
+       "description": "Physical key codes for application-local toggle dictation; empty disables the shortcut"
++    },
++    {
++      "targetKey": "feature.yoyoking.settings",
++      "type": "import('@shared/types/yoyoking').YoyokingSettings",
++      "defaultValue": {
++        "douyinEnabled": true,
++        "douyinSdkDirectory": "",
++        "jianyingExecutable": "",
++        "jianyingRuntime": "",
++        "mediaRoots": []
++      },
++      "status": "classified",
++      "description": "Editing workspace and user-selected runtime locations"
++    },
++    {
++      "targetKey": "feature.yoyoking.installation",
++      "type": "{ agentId?: string; douyinServerId?: string; editServerId?: string; hostServerId?: string }",
++      "defaultValue": {},
++      "status": "classified",
++      "description": "App-owned MCP and Agent identities, without credentials"
++    },
++    {
++      "targetKey": "app.dist.auto_update.enabled",
++      "type": "boolean",
++      "defaultValue": false,
++      "status": "classified",
++      "description": "Derivative updates remain disabled until its own distribution channel exists"
++    },
++    {
++      "targetKey": "app.privacy.data_collection.enabled",
++      "type": "boolean",
++      "defaultValue": false,
++      "status": "classified",
++      "description": "Do not enable upstream telemetry by default in the derivative"
+     }
+   ]
+ }
+diff --git a/src/main/ai/mcp/McpRuntimeService.ts b/src/main/ai/mcp/McpRuntimeService.ts
+index 86a3639..d54609c 100644
+--- a/src/main/ai/mcp/McpRuntimeService.ts
++++ b/src/main/ai/mcp/McpRuntimeService.ts
+@@ -225,6 +225,35 @@ async function clampToolResultImages(
+ @ServicePhase(Phase.WhenReady)
+ @DependsOn(['WindowManager', 'McpPackageService', 'BrowserSessionService'])
+ export class McpRuntimeService extends BaseService {
++  private ephemeralTransports = new Map<string, typeof globalThis.fetch>()
++  private ephemeralEndpoints = new Map<string, () => Promise<import('./servers/factory').BuiltinMcpEndpoint>>()
++
++  registerAuthenticatedTransport(serverId: string, fetch: typeof globalThis.fetch): () => Promise<void> {
++    if (this.ephemeralTransports.has(serverId)) throw new Error('Authenticated transport already registered')
++    this.ephemeralTransports.set(serverId, fetch)
++    this.connectFailures.delete(this.getServerKey(this.getServerById(serverId)))
++    application.get('McpCatalogService').clearSharedToolsCache(serverId)
++    return async () => {
++      if (this.ephemeralTransports.get(serverId) !== fetch) return
++      this.ephemeralTransports.delete(serverId)
++      await this.stopServer(serverId)
++    }
++  }
++
++  registerLocalEndpoint(
++    serverId: string,
++    factory: () => Promise<import('./servers/factory').BuiltinMcpEndpoint>
++  ): () => Promise<void> {
++    if (this.ephemeralEndpoints.has(serverId)) throw new Error('Local endpoint already registered')
++    this.ephemeralEndpoints.set(serverId, factory)
++    this.connectFailures.delete(this.getServerKey(this.getServerById(serverId)))
++    application.get('McpCatalogService').clearSharedToolsCache(serverId)
++    return async () => {
++      if (this.ephemeralEndpoints.get(serverId) !== factory) return
++      this.ephemeralEndpoints.delete(serverId)
++      await this.stopServer(serverId)
++    }
++  }
+   private connections = new Map<string, McpConnection>()
+   private pendingConnections = new Map<string, Promise<McpConnection>>()
+   private pendingConnectionControllers = new Map<string, AbortController>()
+@@ -261,6 +290,8 @@ export class McpRuntimeService extends BaseService {
+ 
+   protected async onStop(): Promise<void> {
+     this.stopping = true
++    this.ephemeralTransports.clear()
++    this.ephemeralEndpoints.clear()
+     this.connectionGenerations.clear()
+     this.oauthCoordinator.close()
+     this.abortActiveToolCalls()
+@@ -380,19 +411,25 @@ export class McpRuntimeService extends BaseService {
+     this.connectionGenerations.set(this.getServerKey(server), generation)
+     const events = this.connectionEvents(server, generation)
+ 
+-    if (mcpTransportKind(server) === 'inMemory') {
++    const localEndpoint = this.ephemeralEndpoints.get(server.id)
++    if (localEndpoint || mcpTransportKind(server) === 'inMemory') {
+       return createInProcessMcpConnection({
+         appVersion: app.getVersion(),
+-        endpoint: await createBuiltinMcpEndpoint(
+-          server.name as BuiltinMcpServerName,
+-          [...(server.args || [])],
+-          server.env || {}
+-        ),
++        endpoint: localEndpoint
++          ? await localEndpoint()
++          : await createBuiltinMcpEndpoint(
++              server.name as BuiltinMcpServerName,
++              [...(server.args || [])],
++              server.env || {}
++            ),
+         events,
+         connectTimeoutMs
+       })
+     }
+ 
++    const authenticatedFetch = this.ephemeralTransports.get(server.id)
++    if (server.tags?.includes('ephemeral-auth') && !authenticatedFetch)
++      throw new UnauthorizedError('Explicit account authorization is required')
+     return createExternalMcpConnection({
+       server: resolveBuiltinExternalMcpServer(server),
+       oauthCoordinator: this.oauthCoordinator,
+@@ -400,6 +437,7 @@ export class McpRuntimeService extends BaseService {
+       authorizationWindowId: requestContext?.windowId,
+       onAuthorizationStarted: () => this.setServerStatus(server.id, 'connecting', undefined, true),
+       signal,
++      authenticatedFetch,
+       appVersion: app.getVersion(),
+       events,
+       connectTimeoutMs,
+diff --git a/src/main/ai/mcp/connections/ExternalMcpConnection.ts b/src/main/ai/mcp/connections/ExternalMcpConnection.ts
+index a10fed8..bc706e4 100644
+--- a/src/main/ai/mcp/connections/ExternalMcpConnection.ts
++++ b/src/main/ai/mcp/connections/ExternalMcpConnection.ts
+@@ -101,7 +101,8 @@ export async function createExternalMcpConnection({
+   allowInteractiveAuthorization = true,
+   authorizationWindowId,
+   onAuthorizationStarted,
+-  signal
++  signal,
++  authenticatedFetch
+ }: {
+   server: McpServer
+   appVersion: string
+@@ -113,12 +114,13 @@ export async function createExternalMcpConnection({
+   authorizationWindowId?: string
+   onAuthorizationStarted?: () => void
+   signal?: AbortSignal
++  authenticatedFetch?: typeof globalThis.fetch
+ }): Promise<McpConnection> {
+   const authProvider = new McpOAuthClientProvider({
+     serverUrlHash: oauthServerUrlHash(server.baseUrl || '')
+   })
+   const headers = mergeHeaders(defaultAppHeaders(), server.headers)
+-  const useOAuth = !('authorization' in headers)
++  const useOAuth = !authenticatedFetch && !('authorization' in headers)
+   const args = [...(server.args || [])]
+   const lifetime = new AbortController()
+   type AuthOperation = { signal: AbortSignal; lease?: McpAuthorizationLease }
+@@ -157,7 +159,7 @@ export async function createExternalMcpConnection({
+       if (type === 'streamableHttp') {
+         return wrapOAuthTransport(
+           new StreamableHTTPClientTransport(new URL(server.baseUrl), {
+-            fetch: (input, init) => net.fetch(input.toString(), init),
++            fetch: authenticatedFetch ?? ((input, init) => net.fetch(input.toString(), init)),
+             requestInit: { headers },
+             ...(useOAuth ? { authProvider } : {})
+           })
+@@ -166,7 +168,7 @@ export async function createExternalMcpConnection({
+       if (type === 'sse') {
+         return wrapOAuthTransport(
+           new SSEClientTransport(new URL(server.baseUrl), {
+-            fetch: (input, init) => net.fetch(input.toString(), init),
++            fetch: authenticatedFetch ?? ((input, init) => net.fetch(input.toString(), init)),
+             requestInit: { headers },
+             ...(useOAuth ? { authProvider } : {})
+           })
+diff --git a/src/main/ai/mcp/connections/__tests__/ExternalMcpConnection.test.ts b/src/main/ai/mcp/connections/__tests__/ExternalMcpConnection.test.ts
+index 884e26c..16cb302 100644
+--- a/src/main/ai/mcp/connections/__tests__/ExternalMcpConnection.test.ts
++++ b/src/main/ai/mcp/connections/__tests__/ExternalMcpConnection.test.ts
+@@ -58,6 +58,24 @@ beforeEach(() => {
+ })
+ 
+ describe('ExternalMcpConnection transport fallback policy', () => {
++  it('discovers tools through an injected memory-only authenticated transport without using the default fetch', async () => {
++    const handler = createLegacyHandler()
++    const authenticatedFetch: typeof fetch = (input, init) => fetchMcpHandler(handler, input, init)
++    const connection = await createExternalMcpConnection({
++      server: { ...server, headers: undefined },
++      appVersion: '1',
++      events,
++      log: createLog(),
++      connectTimeoutMs: 5000,
++      authenticatedFetch
++    })
++    try {
++      expect((await connection.listTools()).map((tool) => tool.name)).toContain('mx_quote')
++      expect(fetchMock).not.toHaveBeenCalled()
++    } finally {
++      await connection.close()
++    }
++  })
+   it('coalesces authorization before credentials can be overwritten and releases failed attempts', async () => {
+     const coordinator = new McpOAuthCoordinator()
+     const controller = new AbortController()
+diff --git a/src/main/core/application/serviceRegistry.ts b/src/main/core/application/serviceRegistry.ts
+index 485fb52..01bc0bc 100644
+--- a/src/main/core/application/serviceRegistry.ts
++++ b/src/main/core/application/serviceRegistry.ts
+@@ -37,6 +37,7 @@ import { BrowserSessionService } from '@main/features/browser'
+ import { FileProcessingService, TesseractRuntimeService } from '@main/features/fileProcessing'
+ import { KnowledgeService, KnowledgeVectorStoreService } from '@main/features/knowledge'
+ import { MiniAppRuntimeService } from '@main/features/miniApp/runtime/MiniAppRuntimeService'
++import { YoyokingService } from '@main/features/yoyoking/YoyokingService'
+ import { IpcApiService } from '@main/ipc/IpcApiService'
+ import { AnalyticsService } from '@main/services/AnalyticsService'
+ import { AppMenuService } from '@main/services/AppMenuService'
+@@ -170,6 +171,7 @@ export const services = {
+   QuickAssistantService,
+   McpPackageService,
+   McpRuntimeService,
++  YoyokingService,
+   McpCatalogService,
+   BinaryManager,
+   OpenClawService,
+diff --git a/src/main/core/paths/constants.ts b/src/main/core/paths/constants.ts
+index 1b9755f..f70baf3 100644
+--- a/src/main/core/paths/constants.ts
++++ b/src/main/core/paths/constants.ts
+@@ -18,7 +18,7 @@ import path from 'node:path'
+ 
+ import { app } from 'electron'
+ 
+-export const CHERRY_HOME_DIRNAME = '.cherrystudio'
++export const CHERRY_HOME_DIRNAME = '.yoyokingstudio'
+ 
+ function resolveDevProfileRoot(): string | undefined {
+   if (app.isPackaged) return undefined
+diff --git a/src/main/core/paths/pathRegistry.ts b/src/main/core/paths/pathRegistry.ts
+index a5d3757..c800730 100644
+--- a/src/main/core/paths/pathRegistry.ts
++++ b/src/main/core/paths/pathRegistry.ts
+@@ -100,6 +100,18 @@ export function buildPathRegistry() {
+       ? path.join(appExtraResources, 'migrations/sqlite-drizzle')
+       : path.join(__dirname, '../../migrations/sqlite-drizzle'),
+ 
++    'feature.yoyoking.runtime': app.isPackaged
++      ? path.join(appExtraResources, 'yoyoking')
++      : path.join(appRootResources, 'yoyoking'),
++    'feature.yoyoking.workspace': path.join(appUserDataData, 'Yoyoking'),
++    'feature.yoyoking.python_env': path.join(appUserDataRuntime, 'yoyoking-python'),
++    'feature.yoyoking.snapshots': path.join(appUserDataData, 'Yoyoking', 'native-snapshots'),
++    'feature.yoyoking.douyin_sdk': path.join(
++      getUserSystemPath('documents', path.join(sysHome, 'Documents')),
++      'DouyinCreatorSDK'
++    ),
++    'feature.yoyoking.jianying_userdata': path.join(app.getPath('appData'), '..', 'Local', 'JianyingPro', 'User Data'),
++
+     // -- D. feature.* — grouped by feature, physical location is irrelevant --
+     'feature.selection.native_panel_file': path.join(
+       appRootResources,
+diff --git a/src/main/ipc/handlers/ipcHandlers.ts b/src/main/ipc/handlers/ipcHandlers.ts
+index cb778ce..1fcbe0a 100644
+--- a/src/main/ipc/handlers/ipcHandlers.ts
++++ b/src/main/ipc/handlers/ipcHandlers.ts
+@@ -49,6 +49,7 @@ import { voiceHandlers } from './voice'
+ import { webSearchHandlers } from './webSearch'
+ import { webviewHandlers } from './webview'
+ import { windowHandlers } from './window'
++import { yoyokingHandlers } from './yoyoking'
+ 
+ /**
+  * Global request handler map — exactly one handler per declared route, exhaustive
+@@ -60,6 +61,7 @@ import { windowHandlers } from './window'
+  * exposure surface.
+  */
+ export const ipcHandlers: IpcHandlersFor<IpcRequestSchemas> = {
++  ...yoyokingHandlers,
+   ...aiHandlers,
+   ...voiceHandlers,
+   ...apiGatewayHandlers,
+diff --git a/src/main/services/AppUpdaterService.ts b/src/main/services/AppUpdaterService.ts
+index dd3048c..b2c13cb 100644
+--- a/src/main/services/AppUpdaterService.ts
++++ b/src/main/services/AppUpdaterService.ts
+@@ -92,6 +92,7 @@ const CHECK_RETRY_POLICY: RetryPolicy = {
+ @ServicePhase(Phase.WhenReady)
+ @DependsOn(['WindowManager', 'SchedulerService'])
+ export class AppUpdaterService extends BaseService {
++  private readonly derivativeUpdatesEnabled: boolean = false
+   private cancellationToken: CancellationToken = new CancellationToken()
+   private updateCheckResult: UpdateCheckResult | null = null
+   // Consecutive scheduled-check failures, drives backoff; reset on success.
+@@ -226,6 +227,7 @@ export class AppUpdaterService extends BaseService {
+   }
+ 
+   private async fetchReleaseHistory(): Promise<ReleaseNotesEntry[] | null> {
++    if (!this.derivativeUpdatesEnabled) return null
+     try {
+       const { updateHeaders } = await this.getUpdateRequest()
+       const response = await net.fetch(RELEASE_HISTORY_URL, {
+@@ -260,7 +262,7 @@ export class AppUpdaterService extends BaseService {
+     | { status: 'current'; currentVersion: string }
+     | { status: 'available'; currentVersion: string; version: string }
+   > {
+-    if (this.isPortable()) return { status: 'unsupported' }
++    if (!this.derivativeUpdatesEnabled || this.isPortable()) return { status: 'unsupported' }
+     const { currentVersion, updateChannel, updateHeaders } = await this.getUpdateRequest()
+     const updater = new ReleaseNotesUpdater()
+     updater.logger = logger as Logger
+@@ -278,6 +280,7 @@ export class AppUpdaterService extends BaseService {
+   }
+ 
+   public async getLatestReleaseNotes(): Promise<ReleaseNotesEntry | null> {
++    if (!this.derivativeUpdatesEnabled) return null
+     try {
+       const { updateChannel, updateHeaders } = await this.getUpdateRequest()
+       const updater = new ReleaseNotesUpdater()
+@@ -337,6 +340,7 @@ export class AppUpdaterService extends BaseService {
+    * broadcast (see `registerAutoUpdaterListeners`), not the return value.
+    */
+   private async performUpdateCheck() {
++    if (!this.derivativeUpdatesEnabled) return { currentVersion: app.getVersion(), updateInfo: null }
+     void application.get('AnalyticsService').trackAppUpdate()
+ 
+     if (this.isPortable()) {
+@@ -418,6 +422,7 @@ export class AppUpdaterService extends BaseService {
+   }
+ 
+   public quitAndInstall() {
++    if (!this.derivativeUpdatesEnabled) throw new Error('Yoyoking Studio has no configured update channel')
+     application.markQuitting()
+     setImmediate(() => autoUpdater.quitAndInstall(true, true))
+   }
+diff --git a/src/main/services/mediaProtocol/MediaProtocolService.ts b/src/main/services/mediaProtocol/MediaProtocolService.ts
+index 92487de..cc5b684 100644
+--- a/src/main/services/mediaProtocol/MediaProtocolService.ts
++++ b/src/main/services/mediaProtocol/MediaProtocolService.ts
+@@ -7,6 +7,7 @@ import { loggerService } from '@logger'
+ import { BaseService, Injectable, Phase, ServicePhase } from '@main/core/lifecycle'
+ import { isAppRendererUrl } from '@main/core/security/validateSender'
+ 
++import { type FileVideoEntry, serveFileVideo } from './fileVideo'
+ import { CHERRY_MEDIA_SCHEME, MEDIA_KINDS, type MediaEntry, type MediaKind } from './types'
+ 
+ const logger = loggerService.withContext('MediaProtocolService')
+@@ -30,6 +31,13 @@ const logger = loggerService.withContext('MediaProtocolService')
+ @ServicePhase(Phase.WhenReady)
+ export class MediaProtocolService extends BaseService {
+   private stores = new Map<MediaKind, Map<string, MediaEntry>>()
++  private videos = new Map<string, FileVideoEntry>()
++
++  storeVideo(entry: Omit<FileVideoEntry, 'lifetime'>): string {
++    const id = randomUUID()
++    this.videos.set(id, { ...entry, lifetime: new AbortController() })
++    return id
++  }
+ 
+   protected async onInit(): Promise<void> {
+     // `protocol.handle` requires an app-ready process, hence Phase.WhenReady.
+@@ -38,7 +46,10 @@ export class MediaProtocolService extends BaseService {
+       { urls: [`${CHERRY_MEDIA_SCHEME}://*/*`] },
+       (details, callback) => {
+         const url = new URL(details.url)
+-        const entry = this.stores.get(url.hostname as MediaKind)?.get(url.pathname.slice(1))
++        const entry =
++          url.hostname === 'video'
++            ? this.videos.get(url.pathname.slice(1))
++            : this.stores.get(url.hostname as MediaKind)?.get(url.pathname.slice(1))
+         const access = entry?.access
+         callback({
+           cancel: Boolean(
+@@ -54,6 +65,9 @@ export class MediaProtocolService extends BaseService {
+     this.registerDisposable(() => session.defaultSession.webRequest.onBeforeRequest(null))
+     this.registerDisposable(() => protocol.unhandle(CHERRY_MEDIA_SCHEME))
+     this.registerDisposable(() => this.stores.clear())
++    this.registerDisposable(() => {
++      for (const id of this.videos.keys()) this.remove('video', id)
++    })
+     logger.info('Media protocol handler registered', { scheme: CHERRY_MEDIA_SCHEME })
+   }
+ 
+@@ -74,6 +88,10 @@ export class MediaProtocolService extends BaseService {
+ 
+   /** Remove an entry. Returns whether it existed. */
+   remove(kind: MediaKind, id: string): boolean {
++    if (kind === 'video') {
++      this.videos.get(id)?.lifetime.abort()
++      return this.videos.delete(id)
++    }
+     return this.stores.get(kind)?.delete(id) ?? false
+   }
+ 
+@@ -82,7 +100,7 @@ export class MediaProtocolService extends BaseService {
+     return `${CHERRY_MEDIA_SCHEME}://${kind}/${id}`
+   }
+ 
+-  private handleRequest(request: Request): Response {
++  private handleRequest(request: Request): Response | Promise<Response> {
+     if (request.method !== 'GET' && request.method !== 'HEAD') {
+       return new Response(null, { status: 405, headers: { Allow: 'GET, HEAD' } })
+     }
+@@ -99,6 +117,10 @@ export class MediaProtocolService extends BaseService {
+       return new Response('Missing media id', { status: 400 })
+     }
+ 
++    if (kind === 'video') {
++      const video = this.videos.get(id)
++      return video ? serveFileVideo(request, video) : new Response('Not found', { status: 404 })
++    }
+     const entry = this.stores.get(kind as MediaKind)?.get(id)
+     if (!entry) {
+       return new Response('Not found', { status: 404 })
+diff --git a/src/main/services/mediaProtocol/README.md b/src/main/services/mediaProtocol/README.md
+index c427be6..49a8479 100644
+--- a/src/main/services/mediaProtocol/README.md
++++ b/src/main/services/mediaProtocol/README.md
+@@ -1,6 +1,6 @@
+ # mediaProtocol
+ 
+-Serves in-memory binary media to renderer processes over the custom `cherry-media://` scheme, so a renderer can read large bytes the main process already holds without an IPC copy or a temp file on disk.
++Serves owned binary media to renderer processes over the custom `cherry-media://` scheme. Images and audio use in-memory entries; videos use authorized file-backed streams without reading an entire MP4 into memory or copying it across IPC.
+ 
+ The first consumer is the screenshot overlay: each display's full-screen capture is tens of MB, and the overlay both paints it and re-reads regions of it. Structured-cloning that through IPC, or round-tripping it via disk, costs more than the whole capture.
+ 
+@@ -22,6 +22,7 @@ An unknown kind is a 400, not a fallthrough to another kind's store — ids are
+ | `types.ts` | `CHERRY_MEDIA_SCHEME`, `MediaKind` + `MEDIA_KINDS`, the internal `MediaEntry` shape |
+ | `registerSchemes.ts` | `CHERRY_MEDIA_SCHEME_DECLARATION` — the pre-ready privilege declaration; `main.ts` passes it to the process's single `registerSchemesAsPrivileged` call together with the mini-app scheme |
+ | `MediaProtocolService.ts` | the store and the `protocol.handle` responder |
++| `fileVideo.ts` | realpath authorization, file identity rechecks and streaming video range responses |
+ | `index.ts` | barrel — the only import surface for code outside this directory |
+ 
+ ## Two-phase registration
+@@ -91,6 +92,9 @@ They share only the word. Merging them would put a preboot-timed Chromium scheme
+ | `store(kind, data, mimeType, access?)` | stores the buffer, returns its id. Caller owns the lifetime |
+ | `remove(kind, id)` | drops the entry; returns whether it existed |
+ | `getUrl(kind, id)` | the URL a renderer loads |
++| `storeVideo({path, roots, mimeType, access})` | registers a file-backed video; `access.webContentsId` is required and each request rechecks the allowed real paths |
++
++Video entries support GET, HEAD and single byte ranges with the same 206/416 behavior as audio. File identity is checked across open and path resolution; sibling-prefix and directory-link escapes fail closed. `remove('video', id)` aborts outstanding streams and rejects new reads. Yoyoking owns preview entries and releases their window listeners when a preview closes or its window exits.
+ 
+ ```typescript
+ import { MediaKind } from '@main/services/mediaProtocol'
+diff --git a/src/main/services/mediaProtocol/__tests__/MediaProtocolService.test.ts b/src/main/services/mediaProtocol/__tests__/MediaProtocolService.test.ts
+index 75444a7..d1e3e8b 100644
+--- a/src/main/services/mediaProtocol/__tests__/MediaProtocolService.test.ts
++++ b/src/main/services/mediaProtocol/__tests__/MediaProtocolService.test.ts
+@@ -1,3 +1,6 @@
++import { join } from 'node:path'
++import { pathToFileURL } from 'node:url'
++
+ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+ 
+ import { application } from '@application'
+@@ -60,7 +63,7 @@ describe('MediaProtocolService', () => {
+ 
+   it('rejects an unknown kind instead of falling through to another kind store', async () => {
+     const id = service.store(MediaKind.Image, Buffer.from([9]), 'image/png')
+-    const response = await handler(new Request(`cherry-media://video/${id}`))
++    const response = await handler(new Request(`cherry-media://unknown/${id}`))
+     expect(response.status).toBe(400)
+   })
+ 
+@@ -111,11 +114,11 @@ describe('MediaProtocolService', () => {
+   })
+ 
+   it('restricts owned media to the trusted main frame of its issuing window', () => {
+-    vi.mocked(application.getPath).mockReturnValue('/app')
++    vi.mocked(application.getPath).mockReturnValue(process.cwd())
+     const id = service.store(MediaKind.Audio, Buffer.from([1]), 'audio/wav', { webContentsId: 7 })
+     const url = service.getUrl(MediaKind.Audio, id)
+     const check = beforeRequestMock.mock.calls[0][1]
+-    const main = { url: 'file:///app/renderer/index.html', top: undefined as unknown }
++    const main = { url: pathToFileURL(join(process.cwd(), 'out/renderer/index.html')).href, top: undefined as unknown }
+     main.top = main
+     function allowed(webContentsId: number | undefined, frame: unknown) {
+       let cancelled: boolean | undefined
+diff --git a/src/main/services/mediaProtocol/index.ts b/src/main/services/mediaProtocol/index.ts
+index b9c6949..643b6eb 100644
+--- a/src/main/services/mediaProtocol/index.ts
++++ b/src/main/services/mediaProtocol/index.ts
+@@ -2,6 +2,7 @@
+  * In-memory binary media served to renderers over the `cherry-media://` scheme.
+  * This barrel is the module's only public door.
+  */
++export { resolveVideoPath } from './fileVideo'
+ export { MediaProtocolService } from './MediaProtocolService'
+ export { CHERRY_MEDIA_SCHEME_DECLARATION } from './registerSchemes'
+ export { CHERRY_MEDIA_SCHEME, MediaKind } from './types'
+diff --git a/src/main/services/mediaProtocol/types.ts b/src/main/services/mediaProtocol/types.ts
+index e173af5..b90b622 100644
+--- a/src/main/services/mediaProtocol/types.ts
++++ b/src/main/services/mediaProtocol/types.ts
+@@ -8,7 +8,8 @@ export const CHERRY_MEDIA_SCHEME = 'cherry-media'
+  */
+ export const MediaKind = {
+   Image: 'image',
+-  Audio: 'audio'
++  Audio: 'audio',
++  Video: 'video'
+ } as const
+ 
+ export type MediaKind = (typeof MediaKind)[keyof typeof MediaKind]
+diff --git a/src/main/services/protocol/ProtocolService.ts b/src/main/services/protocol/ProtocolService.ts
+index 7681dfe..d73cbbc 100644
+--- a/src/main/services/protocol/ProtocolService.ts
++++ b/src/main/services/protocol/ProtocolService.ts
+@@ -20,7 +20,7 @@ import { parseMcpInstallProtocolUrl } from './handlers/mcpInstall'
+ import { handleNavigateProtocolUrl } from './handlers/navigate'
+ import { handleProvidersProtocolUrl } from './handlers/providersImport'
+ 
+-export const CHERRY_STUDIO_PROTOCOL = 'cherrystudio'
++export const CHERRY_STUDIO_PROTOCOL = 'yoyokingstudio'
+ 
+ const DESKTOP_FILE_NAME = 'cherrystudio-url-handler.desktop'
+ const execAsync = promisify(exec)
+diff --git a/src/main/utils/appEdition.ts b/src/main/utils/appEdition.ts
+index af1dea0..46d46f8 100644
+--- a/src/main/utils/appEdition.ts
++++ b/src/main/utils/appEdition.ts
+@@ -6,8 +6,8 @@ import { application } from '@application'
+ import type { AppEdition } from '@shared/types/appEdition'
+ 
+ const APPLICATION_IDS = {
+-  global: 'com.kangfenmao.CherryStudio',
+-  cn: 'com.cherryai.cherrystudio.cn'
++  global: 'local.yoyoking.studio',
++  cn: 'local.yoyoking.studio.cn'
+ } as const satisfies Record<AppEdition, string>
+ 
+ function parseAppEdition(value: unknown): AppEdition {
+diff --git a/src/renderer/components/app/sidebarIcons.tsx b/src/renderer/components/app/sidebarIcons.tsx
+index 664cfbc..d05638a 100644
+--- a/src/renderer/components/app/sidebarIcons.tsx
++++ b/src/renderer/components/app/sidebarIcons.tsx
+@@ -14,7 +14,8 @@ import {
+   MousePointerClick,
+   NotepadText,
+   Package,
+-  Palette
++  Palette,
++  Film
+ } from 'lucide-react'
+ import type { ReactNode } from 'react'
+ 
+@@ -31,6 +32,7 @@ const CodeMateIcon: SidebarIconComponent = (props) => <Code {...props} viewBox="
+  * components; the navigation data and logic live in `@renderer/utils/sidebar`.
+  */
+ export const SIDEBAR_ICON_COMPONENTS = {
++  yoyoking: Film,
+   assistants: MessageSquare,
+   agents: MousePointerClick,
+   paintings: Palette,
+diff --git a/src/renderer/i18n/label.ts b/src/renderer/i18n/label.ts
+index 8eeeef6..ae07ef1 100644
+--- a/src/renderer/i18n/label.ts
++++ b/src/renderer/i18n/label.ts
+@@ -176,6 +176,7 @@ const titleKeyMap = {
+   knowledge: 'title.knowledge',
+   launchpad: 'title.launchpad',
+   'mcp-servers': 'title.mcp-servers',
++  yoyoking: 'yoyoking.title',
+   notes: 'title.notes',
+   paintings: 'title.paintings',
+   settings: 'title.settings',
+@@ -206,6 +207,7 @@ const sidebarIconKeyMap = {
+   knowledge: 'knowledge.title',
+   files: 'files.title',
+   code_tools: 'code.title',
++  yoyoking: 'yoyoking.title',
+   notes: 'notes.title'
+ } as const
+ 
+@@ -217,6 +219,7 @@ export const getSidebarIconLabelKey = (key: string): string => {
+ // the old one, but main's `components/app/Sidebar` still calls it. Kept until the
+ // chat carve brings feat's Sidebar; remove together with that.
+ const sidebarFavoriteKeyMap = {
++  yoyoking: 'yoyoking.title',
+   assistants: 'assistants.title',
+   agents: 'title.work',
+   store: 'assistants.presets.title',
+diff --git a/src/renderer/i18n/locales/de-de.json b/src/renderer/i18n/locales/de-de.json
+index 7a65bd5..66a2722 100644
+--- a/src/renderer/i18n/locales/de-de.json
++++ b/src/renderer/i18n/locales/de-de.json
+@@ -6183,5 +6183,23 @@
+   "webview.navigation.invalid_address": "Gib eine gültige HTTP-, HTTPS- oder Datei-URL ein",
+   "webview.navigation.load_failed": "Seite konnte nicht geladen werden",
+   "webview.navigation.open_external": "Im externen Browser öffnen",
+-  "webview.navigation.reload": "Neu laden"
++  "webview.navigation.reload": "Neu laden",
++  "yoyoking.attach": "Fenster einbinden",
++  "yoyoking.current_project": "Aktuelles Projekt",
++  "yoyoking.default_model_required": "Wählen Sie ein Standardmodell und bereiten Sie den Schnitt erneut vor.",
++  "yoyoking.detach": "Fenster wiederherstellen",
++  "yoyoking.disconnect": "Trennen",
++  "yoyoking.douyin": "Douyin-Konto",
++  "yoyoking.douyinSdkDirectory": "Douyin-SDK-Ordner",
++  "yoyoking.jianyingExecutable": "Jianying-Programmdatei",
++  "yoyoking.jianyingRuntime": "Jianying-Laufzeitordner",
++  "yoyoking.login": "Offiziell anmelden",
++  "yoyoking.media_roots": "Medienordner (einer pro Zeile)",
++  "yoyoking.native_editor": "Jianying-Fenster",
++  "yoyoking.open_agent": "Schnittdialog öffnen",
++  "yoyoking.preview": "Videovorschau",
++  "yoyoking.projects": "Projekte",
++  "yoyoking.setup": "Schnitt vorbereiten",
++  "yoyoking.title": "Schnittarbeitsplatz",
++  "yoyoking.video_error": "Das Video konnte nicht abgespielt werden. Prüfen Sie Format und Zugriffsrechte."
+ }
+diff --git a/src/renderer/i18n/locales/el-gr.json b/src/renderer/i18n/locales/el-gr.json
+index 12ffc3b..7542c7f 100644
+--- a/src/renderer/i18n/locales/el-gr.json
++++ b/src/renderer/i18n/locales/el-gr.json
+@@ -6183,5 +6183,23 @@
+   "webview.navigation.invalid_address": "Εισαγάγετε μια έγκυρη διεύθυνση URL HTTP, HTTPS ή αρχείου",
+   "webview.navigation.load_failed": "Αποτυχία φόρτωσης της σελίδας",
+   "webview.navigation.open_external": "Άνοιγμα σε εξωτερικό πρόγραμμα περιήγησης",
+-  "webview.navigation.reload": "Επαναφόρτωση"
++  "webview.navigation.reload": "Επαναφόρτωση",
++  "yoyoking.attach": "Σύνδεση παραθύρου",
++  "yoyoking.current_project": "Τρέχον έργο",
++  "yoyoking.default_model_required": "Επιλέξτε προεπιλεγμένο μοντέλο και προετοιμάστε ξανά την επεξεργασία.",
++  "yoyoking.detach": "Επαναφορά παραθύρου",
++  "yoyoking.disconnect": "Αποσύνδεση",
++  "yoyoking.douyin": "Λογαριασμός Douyin",
++  "yoyoking.douyinSdkDirectory": "Φάκελος Douyin SDK",
++  "yoyoking.jianyingExecutable": "Εκτελέσιμο Jianying",
++  "yoyoking.jianyingRuntime": "Φάκελος εκτέλεσης Jianying",
++  "yoyoking.login": "Επίσημη σύνδεση",
++  "yoyoking.media_roots": "Φάκελοι πολυμέσων (ένας ανά γραμμή)",
++  "yoyoking.native_editor": "Παράθυρο Jianying",
++  "yoyoking.open_agent": "Άνοιγμα συνομιλίας επεξεργασίας",
++  "yoyoking.preview": "Προεπισκόπηση βίντεο",
++  "yoyoking.projects": "Έργα",
++  "yoyoking.setup": "Προετοιμασία επεξεργασίας",
++  "yoyoking.title": "Χώρος επεξεργασίας",
++  "yoyoking.video_error": "Δεν ήταν δυνατή η αναπαραγωγή. Ελέγξτε τη μορφή και τα δικαιώματα πρόσβασης."
+ }
+diff --git a/src/renderer/i18n/locales/en-us.json b/src/renderer/i18n/locales/en-us.json
+index fad5fd6..29cdfd3 100644
+--- a/src/renderer/i18n/locales/en-us.json
++++ b/src/renderer/i18n/locales/en-us.json
+@@ -6183,5 +6183,23 @@
+   "webview.navigation.invalid_address": "Enter a valid HTTP, HTTPS, or file URL",
+   "webview.navigation.load_failed": "Failed to load the page",
+   "webview.navigation.open_external": "Open in external browser",
+-  "webview.navigation.reload": "Reload"
++  "webview.navigation.reload": "Reload",
++  "yoyoking.attach": "Attach window",
++  "yoyoking.current_project": "Current project",
++  "yoyoking.default_model_required": "Choose a default model, then prepare editing again.",
++  "yoyoking.detach": "Restore window",
++  "yoyoking.disconnect": "Disconnect",
++  "yoyoking.douyin": "Douyin account",
++  "yoyoking.douyinSdkDirectory": "Douyin SDK folder",
++  "yoyoking.jianyingExecutable": "Jianying executable",
++  "yoyoking.jianyingRuntime": "Jianying runtime folder",
++  "yoyoking.login": "Official login",
++  "yoyoking.media_roots": "Media folders (one per line)",
++  "yoyoking.native_editor": "Jianying window",
++  "yoyoking.open_agent": "Open editing conversation",
++  "yoyoking.preview": "Video preview",
++  "yoyoking.projects": "Projects",
++  "yoyoking.setup": "Prepare editing",
++  "yoyoking.title": "Editing workbench",
++  "yoyoking.video_error": "The video could not be played. Check its format and access permissions."
+ }
+diff --git a/src/renderer/i18n/locales/es-es.json b/src/renderer/i18n/locales/es-es.json
+index 025e6e9..ce90ce5 100644
+--- a/src/renderer/i18n/locales/es-es.json
++++ b/src/renderer/i18n/locales/es-es.json
+@@ -6183,5 +6183,23 @@
+   "webview.navigation.invalid_address": "Introduce una URL válida de HTTP, HTTPS o de archivo",
+   "webview.navigation.load_failed": "No se pudo cargar la página",
+   "webview.navigation.open_external": "Abrir en el navegador externo",
+-  "webview.navigation.reload": "Recargar"
++  "webview.navigation.reload": "Recargar",
++  "yoyoking.attach": "Acoplar ventana",
++  "yoyoking.current_project": "Proyecto actual",
++  "yoyoking.default_model_required": "Elige un modelo predeterminado y prepara la edición de nuevo.",
++  "yoyoking.detach": "Restaurar ventana",
++  "yoyoking.disconnect": "Desconectar",
++  "yoyoking.douyin": "Cuenta de Douyin",
++  "yoyoking.douyinSdkDirectory": "Carpeta del SDK de Douyin",
++  "yoyoking.jianyingExecutable": "Ejecutable de Jianying",
++  "yoyoking.jianyingRuntime": "Carpeta de ejecución de Jianying",
++  "yoyoking.login": "Inicio de sesión oficial",
++  "yoyoking.media_roots": "Carpetas multimedia (una por línea)",
++  "yoyoking.native_editor": "Ventana de Jianying",
++  "yoyoking.open_agent": "Abrir conversación de edición",
++  "yoyoking.preview": "Vista previa de vídeo",
++  "yoyoking.projects": "Proyectos",
++  "yoyoking.setup": "Preparar edición",
++  "yoyoking.title": "Espacio de edición",
++  "yoyoking.video_error": "No se pudo reproducir el vídeo. Comprueba el formato y los permisos."
+ }
+diff --git a/src/renderer/i18n/locales/fr-fr.json b/src/renderer/i18n/locales/fr-fr.json
+index 4291270..7f8ef40 100644
+--- a/src/renderer/i18n/locales/fr-fr.json
++++ b/src/renderer/i18n/locales/fr-fr.json
+@@ -6183,5 +6183,23 @@
+   "webview.navigation.invalid_address": "Saisissez une URL HTTP, HTTPS ou de fichier valide",
+   "webview.navigation.load_failed": "Échec du chargement de la page",
+   "webview.navigation.open_external": "Ouvrir dans le navigateur externe",
+-  "webview.navigation.reload": "Recharger"
++  "webview.navigation.reload": "Recharger",
++  "yoyoking.attach": "Intégrer la fenêtre",
++  "yoyoking.current_project": "Projet actuel",
++  "yoyoking.default_model_required": "Choisissez un modèle par défaut puis préparez à nouveau le montage.",
++  "yoyoking.detach": "Restaurer la fenêtre",
++  "yoyoking.disconnect": "Déconnecter",
++  "yoyoking.douyin": "Compte Douyin",
++  "yoyoking.douyinSdkDirectory": "Dossier du SDK Douyin",
++  "yoyoking.jianyingExecutable": "Exécutable Jianying",
++  "yoyoking.jianyingRuntime": "Dossier du moteur Jianying",
++  "yoyoking.login": "Connexion officielle",
++  "yoyoking.media_roots": "Dossiers multimédias (un par ligne)",
++  "yoyoking.native_editor": "Fenêtre Jianying",
++  "yoyoking.open_agent": "Ouvrir la conversation de montage",
++  "yoyoking.preview": "Aperçu vidéo",
++  "yoyoking.projects": "Projets",
++  "yoyoking.setup": "Préparer le montage",
++  "yoyoking.title": "Espace de montage",
++  "yoyoking.video_error": "Impossible de lire la vidéo. Vérifiez son format et les autorisations."
+ }
+diff --git a/src/renderer/i18n/locales/it-it.json b/src/renderer/i18n/locales/it-it.json
+index d2fc3d2..69f2a2c 100644
+--- a/src/renderer/i18n/locales/it-it.json
++++ b/src/renderer/i18n/locales/it-it.json
+@@ -6183,5 +6183,23 @@
+   "webview.navigation.invalid_address": "Inserisci un URL HTTP, HTTPS o file valido",
+   "webview.navigation.load_failed": "Impossibile caricare la pagina",
+   "webview.navigation.open_external": "Apri nel browser esterno",
+-  "webview.navigation.reload": "Ricarica"
++  "webview.navigation.reload": "Ricarica",
++  "yoyoking.attach": "Collega finestra",
++  "yoyoking.current_project": "Progetto corrente",
++  "yoyoking.default_model_required": "Scegli un modello predefinito e prepara di nuovo il montaggio.",
++  "yoyoking.detach": "Ripristina finestra",
++  "yoyoking.disconnect": "Disconnetti",
++  "yoyoking.douyin": "Account Douyin",
++  "yoyoking.douyinSdkDirectory": "Cartella SDK Douyin",
++  "yoyoking.jianyingExecutable": "Eseguibile Jianying",
++  "yoyoking.jianyingRuntime": "Cartella runtime Jianying",
++  "yoyoking.login": "Accesso ufficiale",
++  "yoyoking.media_roots": "Cartelle multimediali (una per riga)",
++  "yoyoking.native_editor": "Finestra Jianying",
++  "yoyoking.open_agent": "Apri conversazione di montaggio",
++  "yoyoking.preview": "Anteprima video",
++  "yoyoking.projects": "Progetti",
++  "yoyoking.setup": "Prepara montaggio",
++  "yoyoking.title": "Spazio di montaggio",
++  "yoyoking.video_error": "Impossibile riprodurre il video. Controlla formato e autorizzazioni."
+ }
+diff --git a/src/renderer/i18n/locales/ja-jp.json b/src/renderer/i18n/locales/ja-jp.json
+index 9db2521..b609611 100644
+--- a/src/renderer/i18n/locales/ja-jp.json
++++ b/src/renderer/i18n/locales/ja-jp.json
+@@ -6183,5 +6183,23 @@
+   "webview.navigation.invalid_address": "有効な HTTP、HTTPS、またはファイル URL を入力してください",
+   "webview.navigation.load_failed": "ページの読み込みに失敗しました",
+   "webview.navigation.open_external": "外部ブラウザで開く",
+-  "webview.navigation.reload": "再読み込み"
++  "webview.navigation.reload": "再読み込み",
++  "yoyoking.attach": "ウィンドウを接続",
++  "yoyoking.current_project": "現在のプロジェクト",
++  "yoyoking.default_model_required": "既定のモデルを選択し、編集環境を再度準備してください。",
++  "yoyoking.detach": "ウィンドウを復元",
++  "yoyoking.disconnect": "切断",
++  "yoyoking.douyin": "Douyin アカウント",
++  "yoyoking.douyinSdkDirectory": "Douyin SDK フォルダー",
++  "yoyoking.jianyingExecutable": "Jianying 実行ファイル",
++  "yoyoking.jianyingRuntime": "Jianying ランタイムフォルダー",
++  "yoyoking.login": "公式ログイン",
++  "yoyoking.media_roots": "メディアフォルダー（1行に1つ）",
++  "yoyoking.native_editor": "Jianying ウィンドウ",
++  "yoyoking.open_agent": "編集チャットを開く",
++  "yoyoking.preview": "動画プレビュー",
++  "yoyoking.projects": "プロジェクト",
++  "yoyoking.setup": "編集環境を準備",
++  "yoyoking.title": "編集ワークスペース",
++  "yoyoking.video_error": "動画を再生できません。形式とアクセス権を確認してください。"
+ }
+diff --git a/src/renderer/i18n/locales/pt-pt.json b/src/renderer/i18n/locales/pt-pt.json
+index e215eb7..ee6251d 100644
+--- a/src/renderer/i18n/locales/pt-pt.json
++++ b/src/renderer/i18n/locales/pt-pt.json
+@@ -6183,5 +6183,23 @@
+   "webview.navigation.invalid_address": "Introduza um URL HTTP, HTTPS ou de ficheiro válido",
+   "webview.navigation.load_failed": "Falha ao carregar a página",
+   "webview.navigation.open_external": "Abrir no navegador externo",
+-  "webview.navigation.reload": "Recarregar"
++  "webview.navigation.reload": "Recarregar",
++  "yoyoking.attach": "Integrar janela",
++  "yoyoking.current_project": "Projeto atual",
++  "yoyoking.default_model_required": "Escolha um modelo predefinido e prepare novamente a edição.",
++  "yoyoking.detach": "Restaurar janela",
++  "yoyoking.disconnect": "Desligar",
++  "yoyoking.douyin": "Conta Douyin",
++  "yoyoking.douyinSdkDirectory": "Pasta do SDK Douyin",
++  "yoyoking.jianyingExecutable": "Executável Jianying",
++  "yoyoking.jianyingRuntime": "Pasta de execução Jianying",
++  "yoyoking.login": "Início de sessão oficial",
++  "yoyoking.media_roots": "Pastas multimédia (uma por linha)",
++  "yoyoking.native_editor": "Janela Jianying",
++  "yoyoking.open_agent": "Abrir conversa de edição",
++  "yoyoking.preview": "Pré-visualização de vídeo",
++  "yoyoking.projects": "Projetos",
++  "yoyoking.setup": "Preparar edição",
++  "yoyoking.title": "Espaço de edição",
++  "yoyoking.video_error": "Não foi possível reproduzir o vídeo. Verifique o formato e as permissões."
+ }
+diff --git a/src/renderer/i18n/locales/ro-ro.json b/src/renderer/i18n/locales/ro-ro.json
+index e6c8087..025e134 100644
+--- a/src/renderer/i18n/locales/ro-ro.json
++++ b/src/renderer/i18n/locales/ro-ro.json
+@@ -6183,5 +6183,23 @@
+   "webview.navigation.invalid_address": "Introduceți un URL valid HTTP, HTTPS sau de fișier",
+   "webview.navigation.load_failed": "Încărcarea paginii a eșuat",
+   "webview.navigation.open_external": "Deschide în browserul extern",
+-  "webview.navigation.reload": "Reîncarcă"
++  "webview.navigation.reload": "Reîncarcă",
++  "yoyoking.attach": "Atașează fereastra",
++  "yoyoking.current_project": "Proiect curent",
++  "yoyoking.default_model_required": "Alege un model implicit și pregătește din nou editarea.",
++  "yoyoking.detach": "Restaurează fereastra",
++  "yoyoking.disconnect": "Deconectează",
++  "yoyoking.douyin": "Cont Douyin",
++  "yoyoking.douyinSdkDirectory": "Dosar SDK Douyin",
++  "yoyoking.jianyingExecutable": "Executabil Jianying",
++  "yoyoking.jianyingRuntime": "Dosar de execuție Jianying",
++  "yoyoking.login": "Autentificare oficială",
++  "yoyoking.media_roots": "Dosare media (unul pe linie)",
++  "yoyoking.native_editor": "Fereastră Jianying",
++  "yoyoking.open_agent": "Deschide conversația de editare",
++  "yoyoking.preview": "Previzualizare video",
++  "yoyoking.projects": "Proiecte",
++  "yoyoking.setup": "Pregătește editarea",
++  "yoyoking.title": "Spațiu de editare",
++  "yoyoking.video_error": "Videoclipul nu a putut fi redat. Verifică formatul și permisiunile."
+ }
+diff --git a/src/renderer/i18n/locales/ru-ru.json b/src/renderer/i18n/locales/ru-ru.json
+index 1614313..e436ba4 100644
+--- a/src/renderer/i18n/locales/ru-ru.json
++++ b/src/renderer/i18n/locales/ru-ru.json
+@@ -6183,5 +6183,23 @@
+   "webview.navigation.invalid_address": "Введите корректный URL HTTP, HTTPS или файла",
+   "webview.navigation.load_failed": "Не удалось загрузить страницу",
+   "webview.navigation.open_external": "Открыть во внешнем браузере",
+-  "webview.navigation.reload": "Перезагрузить"
++  "webview.navigation.reload": "Перезагрузить",
++  "yoyoking.attach": "Встроить окно",
++  "yoyoking.current_project": "Текущий проект",
++  "yoyoking.default_model_required": "Выберите модель по умолчанию и повторите подготовку монтажа.",
++  "yoyoking.detach": "Восстановить окно",
++  "yoyoking.disconnect": "Отключить",
++  "yoyoking.douyin": "Аккаунт Douyin",
++  "yoyoking.douyinSdkDirectory": "Папка SDK Douyin",
++  "yoyoking.jianyingExecutable": "Программа Jianying",
++  "yoyoking.jianyingRuntime": "Папка среды Jianying",
++  "yoyoking.login": "Официальный вход",
++  "yoyoking.media_roots": "Папки медиа (по одной в строке)",
++  "yoyoking.native_editor": "Окно Jianying",
++  "yoyoking.open_agent": "Открыть чат монтажа",
++  "yoyoking.preview": "Просмотр видео",
++  "yoyoking.projects": "Проекты",
++  "yoyoking.setup": "Подготовить монтаж",
++  "yoyoking.title": "Монтажная студия",
++  "yoyoking.video_error": "Не удалось воспроизвести видео. Проверьте формат и права доступа."
+ }
+diff --git a/src/renderer/i18n/locales/th-th.json b/src/renderer/i18n/locales/th-th.json
+index 8db59c9..208954c 100644
+--- a/src/renderer/i18n/locales/th-th.json
++++ b/src/renderer/i18n/locales/th-th.json
+@@ -6183,5 +6183,23 @@
+   "webview.navigation.invalid_address": "ป้อน URL ที่ถูกต้องแบบ HTTP, HTTPS หรือ file",
+   "webview.navigation.load_failed": "โหลดหน้าไม่สำเร็จ",
+   "webview.navigation.open_external": "เปิดในเบราว์เซอร์ภายนอก",
+-  "webview.navigation.reload": "โหลดใหม่"
++  "webview.navigation.reload": "โหลดใหม่",
++  "yoyoking.attach": "เชื่อมต่อหน้าต่าง",
++  "yoyoking.current_project": "โปรเจกต์ปัจจุบัน",
++  "yoyoking.default_model_required": "เลือกโมเดลเริ่มต้น แล้วเตรียมการตัดต่ออีกครั้ง",
++  "yoyoking.detach": "คืนค่าหน้าต่าง",
++  "yoyoking.disconnect": "ยกเลิกการเชื่อมต่อ",
++  "yoyoking.douyin": "บัญชี Douyin",
++  "yoyoking.douyinSdkDirectory": "โฟลเดอร์ Douyin SDK",
++  "yoyoking.jianyingExecutable": "ไฟล์โปรแกรม Jianying",
++  "yoyoking.jianyingRuntime": "โฟลเดอร์รันไทม์ Jianying",
++  "yoyoking.login": "เข้าสู่ระบบทางการ",
++  "yoyoking.media_roots": "โฟลเดอร์สื่อ (หนึ่งรายการต่อบรรทัด)",
++  "yoyoking.native_editor": "หน้าต่าง Jianying",
++  "yoyoking.open_agent": "เปิดแชตตัดต่อ",
++  "yoyoking.preview": "ดูตัวอย่างวิดีโอ",
++  "yoyoking.projects": "โปรเจกต์",
++  "yoyoking.setup": "เตรียมการตัดต่อ",
++  "yoyoking.title": "พื้นที่ตัดต่อ",
++  "yoyoking.video_error": "เล่นวิดีโอไม่ได้ โปรดตรวจสอบรูปแบบและสิทธิ์การเข้าถึง"
+ }
+diff --git a/src/renderer/i18n/locales/tr-tr.json b/src/renderer/i18n/locales/tr-tr.json
+index 3253234..78677af 100644
+--- a/src/renderer/i18n/locales/tr-tr.json
++++ b/src/renderer/i18n/locales/tr-tr.json
+@@ -6183,5 +6183,23 @@
+   "webview.navigation.invalid_address": "Geçerli bir HTTP, HTTPS veya dosya URL’si girin",
+   "webview.navigation.load_failed": "Sayfa yüklenemedi",
+   "webview.navigation.open_external": "Harici tarayıcıda aç",
+-  "webview.navigation.reload": "Yenile"
++  "webview.navigation.reload": "Yenile",
++  "yoyoking.attach": "Pencereyi bağla",
++  "yoyoking.current_project": "Geçerli proje",
++  "yoyoking.default_model_required": "Varsayılan modeli seçip düzenlemeyi yeniden hazırlayın.",
++  "yoyoking.detach": "Pencereyi geri yükle",
++  "yoyoking.disconnect": "Bağlantıyı kes",
++  "yoyoking.douyin": "Douyin hesabı",
++  "yoyoking.douyinSdkDirectory": "Douyin SDK klasörü",
++  "yoyoking.jianyingExecutable": "Jianying yürütülebilir dosyası",
++  "yoyoking.jianyingRuntime": "Jianying çalışma zamanı klasörü",
++  "yoyoking.login": "Resmî giriş",
++  "yoyoking.media_roots": "Medya klasörleri (satır başına bir tane)",
++  "yoyoking.native_editor": "Jianying penceresi",
++  "yoyoking.open_agent": "Düzenleme sohbetini aç",
++  "yoyoking.preview": "Video önizleme",
++  "yoyoking.projects": "Projeler",
++  "yoyoking.setup": "Düzenlemeyi hazırla",
++  "yoyoking.title": "Düzenleme çalışma alanı",
++  "yoyoking.video_error": "Video oynatılamadı. Biçimi ve erişim izinlerini denetleyin."
+ }
+diff --git a/src/renderer/i18n/locales/vi-vn.json b/src/renderer/i18n/locales/vi-vn.json
+index 88ec8b9..0432fe5 100644
+--- a/src/renderer/i18n/locales/vi-vn.json
++++ b/src/renderer/i18n/locales/vi-vn.json
+@@ -6183,5 +6183,23 @@
+   "webview.navigation.invalid_address": "Nhập URL HTTP, HTTPS hoặc tệp hợp lệ",
+   "webview.navigation.load_failed": "Tải trang thất bại",
+   "webview.navigation.open_external": "Mở trong trình duyệt bên ngoài",
+-  "webview.navigation.reload": "Tải lại"
++  "webview.navigation.reload": "Tải lại",
++  "yoyoking.attach": "Gắn cửa sổ",
++  "yoyoking.current_project": "Dự án hiện tại",
++  "yoyoking.default_model_required": "Chọn mô hình mặc định rồi chuẩn bị biên tập lại.",
++  "yoyoking.detach": "Khôi phục cửa sổ",
++  "yoyoking.disconnect": "Ngắt kết nối",
++  "yoyoking.douyin": "Tài khoản Douyin",
++  "yoyoking.douyinSdkDirectory": "Thư mục SDK Douyin",
++  "yoyoking.jianyingExecutable": "Tệp thực thi Jianying",
++  "yoyoking.jianyingRuntime": "Thư mục môi trường Jianying",
++  "yoyoking.login": "Đăng nhập chính thức",
++  "yoyoking.media_roots": "Thư mục nội dung (mỗi dòng một mục)",
++  "yoyoking.native_editor": "Cửa sổ Jianying",
++  "yoyoking.open_agent": "Mở cuộc trò chuyện biên tập",
++  "yoyoking.preview": "Xem trước video",
++  "yoyoking.projects": "Dự án",
++  "yoyoking.setup": "Chuẩn bị biên tập",
++  "yoyoking.title": "Không gian biên tập",
++  "yoyoking.video_error": "Không thể phát video. Kiểm tra định dạng và quyền truy cập."
+ }
+diff --git a/src/renderer/i18n/locales/zh-cn.json b/src/renderer/i18n/locales/zh-cn.json
+index 3b56389..489a9ef 100644
+--- a/src/renderer/i18n/locales/zh-cn.json
++++ b/src/renderer/i18n/locales/zh-cn.json
+@@ -6183,5 +6183,23 @@
+   "webview.navigation.invalid_address": "请输入有效的 HTTP、HTTPS 或文件地址",
+   "webview.navigation.load_failed": "页面加载失败",
+   "webview.navigation.open_external": "在外部浏览器中打开",
+-  "webview.navigation.reload": "刷新"
++  "webview.navigation.reload": "刷新",
++  "yoyoking.attach": "接入窗口",
++  "yoyoking.current_project": "读取当前工程",
++  "yoyoking.default_model_required": "请先选择默认模型，再次准备剪辑环境以创建 Agent。",
++  "yoyoking.detach": "恢复独立窗口",
++  "yoyoking.disconnect": "退出连接",
++  "yoyoking.douyin": "抖音账号",
++  "yoyoking.douyinSdkDirectory": "抖音 SDK 目录",
++  "yoyoking.jianyingExecutable": "剪映启动程序",
++  "yoyoking.jianyingRuntime": "剪映渲染运行时目录",
++  "yoyoking.login": "官方登录",
++  "yoyoking.media_roots": "素材目录（每行一个）",
++  "yoyoking.native_editor": "剪映窗口",
++  "yoyoking.open_agent": "打开剪辑会话",
++  "yoyoking.preview": "视频预览",
++  "yoyoking.projects": "工程",
++  "yoyoking.setup": "准备剪辑环境",
++  "yoyoking.title": "剪辑工作台",
++  "yoyoking.video_error": "视频无法播放，请检查格式和访问权限。"
+ }
+diff --git a/src/renderer/i18n/locales/zh-tw.json b/src/renderer/i18n/locales/zh-tw.json
+index 33aabc7..74756db 100644
+--- a/src/renderer/i18n/locales/zh-tw.json
++++ b/src/renderer/i18n/locales/zh-tw.json
+@@ -6183,5 +6183,23 @@
+   "webview.navigation.invalid_address": "請輸入有效的 HTTP、HTTPS 或檔案網址",
+   "webview.navigation.load_failed": "頁面載入失敗",
+   "webview.navigation.open_external": "在外部瀏覽器開啟",
+-  "webview.navigation.reload": "重新載入"
++  "webview.navigation.reload": "重新載入",
++  "yoyoking.attach": "接入視窗",
++  "yoyoking.current_project": "讀取目前工程",
++  "yoyoking.default_model_required": "請先選擇預設模型，再次準備剪輯環境以建立 Agent。",
++  "yoyoking.detach": "恢復獨立視窗",
++  "yoyoking.disconnect": "中斷連線",
++  "yoyoking.douyin": "抖音帳號",
++  "yoyoking.douyinSdkDirectory": "抖音 SDK 目錄",
++  "yoyoking.jianyingExecutable": "剪映啟動程式",
++  "yoyoking.jianyingRuntime": "剪映渲染執行環境目錄",
++  "yoyoking.login": "官方登入",
++  "yoyoking.media_roots": "素材目錄（每行一個）",
++  "yoyoking.native_editor": "剪映視窗",
++  "yoyoking.open_agent": "開啟剪輯對話",
++  "yoyoking.preview": "影片預覽",
++  "yoyoking.projects": "工程",
++  "yoyoking.setup": "準備剪輯環境",
++  "yoyoking.title": "剪輯工作台",
++  "yoyoking.video_error": "影片無法播放，請檢查格式和存取權限。"
+ }
+diff --git a/src/renderer/pages/agents/components/AgentRightPane/AgentRightPane.tsx b/src/renderer/pages/agents/components/AgentRightPane/AgentRightPane.tsx
+index 7489b97..d369428 100644
+--- a/src/renderer/pages/agents/components/AgentRightPane/AgentRightPane.tsx
++++ b/src/renderer/pages/agents/components/AgentRightPane/AgentRightPane.tsx
+@@ -272,6 +272,8 @@ interface AgentRightPaneActions {
+ }
+ 
+ interface AgentRightPanelScope {
++  editingAgentId?: string
++  editingTitle: string
+   browserTitle: string
+   developerMode: boolean
+   filePreviewSelection: ArtifactPaneFileSelection | null
+@@ -942,8 +944,11 @@ function AgentRightPaneStateProvider({
+       workspaceType
+     ]
+   )
++  const [editingInstallation] = usePreference('feature.yoyoking.installation')
+   const scope = useMemo<AgentRightPanelScope>(
+     () => ({
++      editingAgentId: editingInstallation.agentId,
++      editingTitle: t('yoyoking.title'),
+       browserTitle: t('agent.right_pane.tabs.browser'),
+       developerMode: enableDeveloperMode,
+       filePreviewSelection: previewFileSelection,
+@@ -958,6 +963,7 @@ function AgentRightPaneStateProvider({
+       traceTitle: t('trace.label')
+     }),
+     [
++      editingInstallation.agentId,
+       enableDeveloperMode,
+       flowTab,
+       previousFlowTab,
+@@ -978,7 +984,9 @@ function AgentRightPaneStateProvider({
+             <RightPanelProvider
+               capabilities={AGENT_RIGHT_PANEL_CAPABILITIES}
+               scope={scope}
+-              defaultPanelId={RESOURCE_PANE_TAB}
++              defaultPanelId={
++                meta.agentId === editingInstallation.agentId && !!meta.agentId ? 'yoyoking' : RESOURCE_PANE_TAB
++              }
+               defaultOpen={defaultOpen}
+               onOpenChange={onOpenChange}
+               userOpenIntentSeq={userOpenIntentSeq}
+@@ -1746,7 +1754,29 @@ const AGENT_BROWSER_PANE_CAPABILITY = {
+     canMaximize: true
+   })
+ } satisfies RightPanelCapability<AgentRightPanelScope>
++const YoyokingWorkbench = lazy(() => import('@renderer/components/yoyoking/YoyokingWorkbench'))
++function AgentYoyokingRightPanel() {
++  return (
++    <Suspense>
++      <YoyokingWorkbench />
++    </Suspense>
++  )
++}
+ const AGENT_RIGHT_PANEL_CAPABILITIES = [
++  {
++    component: AgentYoyokingRightPanel,
++    resolve: (scope) =>
++      scope.meta.agentId && scope.meta.agentId === scope.editingAgentId
++        ? {
++            id: 'yoyoking',
++            instanceKey: `yoyoking:${scope.meta.sessionId ?? ''}`,
++            title: scope.editingTitle,
++            readiness: 'ready',
++            headerMode: 'content',
++            canMaximize: true
++          }
++        : null
++  },
+   AGENT_RESOURCE_PANE_CAPABILITY,
+   {
+     component: AgentRightPaneFilesPanel,
+diff --git a/src/renderer/pages/launchpad/LaunchpadPage.tsx b/src/renderer/pages/launchpad/LaunchpadPage.tsx
+index abe8704..1a7d020 100644
+--- a/src/renderer/pages/launchpad/LaunchpadPage.tsx
++++ b/src/renderer/pages/launchpad/LaunchpadPage.tsx
+@@ -39,6 +39,7 @@ const APP_ICON_CLASS = 'size-11 object-contain'
+ const SORTABLE_CONTENTS_STYLE = { display: 'contents' } as const
+ 
+ const APP_ICON_SOURCES: Record<SidebarAppId, string> = {
++  yoyoking: filesIcon,
+   assistants: assistantsIcon,
+   agents: agentsIcon,
+   paintings: paintingsIcon,
+diff --git a/src/renderer/routeTree.gen.ts b/src/renderer/routeTree.gen.ts
+index 2625081..5392429 100644
+--- a/src/renderer/routeTree.gen.ts
++++ b/src/renderer/routeTree.gen.ts
+@@ -22,6 +22,7 @@ import { Route as AppLaunchpadRouteImport } from './routes/app/launchpad'
+ import { Route as AppNotesRouteImport } from './routes/app/notes'
+ import { Route as AppReleaseNotesRouteImport } from './routes/app/release-notes'
+ import { Route as AppTranslateRouteImport } from './routes/app/translate'
++import { Route as AppYoyokingRouteImport } from './routes/app/yoyoking'
+ import { Route as SettingsIndexRouteImport } from './routes/settings.index'
+ import { Route as SettingsAboutRouteImport } from './routes/settings/about'
+ import { Route as SettingsApiGatewayRouteImport } from './routes/settings/api-gateway'
+@@ -138,6 +139,11 @@ const AppTranslateRoute = AppTranslateRouteImport.update({
+   path: '/translate',
+   getParentRoute: () => AppRoute,
+ } as any)
++const AppYoyokingRoute = AppYoyokingRouteImport.update({
++  id: '/yoyoking',
++  path: '/yoyoking',
++  getParentRoute: () => AppRoute,
++} as any)
+ const SettingsIndexRoute = SettingsIndexRouteImport.update({
+   id: '/',
+   path: '/',
+@@ -408,6 +414,7 @@ export interface FileRoutesByFullPath {
+   '/app/notes': typeof AppNotesRoute
+   '/app/release-notes': typeof AppReleaseNotesRoute
+   '/app/translate': typeof AppTranslateRoute
++  '/app/yoyoking': typeof AppYoyokingRoute
+   '/settings/about': typeof SettingsAboutRoute
+   '/settings/api-gateway': typeof SettingsApiGatewayRoute
+   '/settings/appearance': typeof SettingsAppearanceRoute
+@@ -472,6 +479,7 @@ export interface FileRoutesByTo {
+   '/app/notes': typeof AppNotesRoute
+   '/app/release-notes': typeof AppReleaseNotesRoute
+   '/app/translate': typeof AppTranslateRoute
++  '/app/yoyoking': typeof AppYoyokingRoute
+   '/settings/about': typeof SettingsAboutRoute
+   '/settings/api-gateway': typeof SettingsApiGatewayRoute
+   '/settings/appearance': typeof SettingsAppearanceRoute
+@@ -535,6 +543,7 @@ export interface FileRoutesById {
+   '/app/notes': typeof AppNotesRoute
+   '/app/release-notes': typeof AppReleaseNotesRoute
+   '/app/translate': typeof AppTranslateRoute
++  '/app/yoyoking': typeof AppYoyokingRoute
+   '/settings/about': typeof SettingsAboutRoute
+   '/settings/api-gateway': typeof SettingsApiGatewayRoute
+   '/settings/appearance': typeof SettingsAppearanceRoute
+@@ -602,6 +611,7 @@ export interface FileRouteTypes {
+     | '/app/notes'
+     | '/app/release-notes'
+     | '/app/translate'
++    | '/app/yoyoking'
+     | '/settings/about'
+     | '/settings/api-gateway'
+     | '/settings/appearance'
+@@ -666,6 +676,7 @@ export interface FileRouteTypes {
+     | '/app/notes'
+     | '/app/release-notes'
+     | '/app/translate'
++    | '/app/yoyoking'
+     | '/settings/about'
+     | '/settings/api-gateway'
+     | '/settings/appearance'
+@@ -728,6 +739,7 @@ export interface FileRouteTypes {
+     | '/app/notes'
+     | '/app/release-notes'
+     | '/app/translate'
++    | '/app/yoyoking'
+     | '/settings/about'
+     | '/settings/api-gateway'
+     | '/settings/appearance'
+@@ -878,6 +890,13 @@ declare module '@tanstack/react-router' {
+       preLoaderRoute: typeof AppTranslateRouteImport
+       parentRoute: typeof AppRoute
+     }
++    '/app/yoyoking': {
++      id: '/app/yoyoking'
++      path: '/yoyoking'
++      fullPath: '/app/yoyoking'
++      preLoaderRoute: typeof AppYoyokingRouteImport
++      parentRoute: typeof AppRoute
++    }
+     '/settings/': {
+       id: '/settings/'
+       path: '/'
+@@ -1243,6 +1262,7 @@ interface AppRouteChildren {
+   AppNotesRoute: typeof AppNotesRoute
+   AppReleaseNotesRoute: typeof AppReleaseNotesRoute
+   AppTranslateRoute: typeof AppTranslateRoute
++  AppYoyokingRoute: typeof AppYoyokingRoute
+   AppMiniAppAppIdRoute: typeof AppMiniAppAppIdRoute
+   AppPaintingsSplatRoute: typeof AppPaintingsSplatRoute
+   AppMiniAppIndexRoute: typeof AppMiniAppIndexRoute
+@@ -1261,6 +1281,7 @@ const AppRouteChildren: AppRouteChildren = {
+   AppNotesRoute: AppNotesRoute,
+   AppReleaseNotesRoute: AppReleaseNotesRoute,
+   AppTranslateRoute: AppTranslateRoute,
++  AppYoyokingRoute: AppYoyokingRoute,
+   AppMiniAppAppIdRoute: AppMiniAppAppIdRoute,
+   AppPaintingsSplatRoute: AppPaintingsSplatRoute,
+   AppMiniAppIndexRoute: AppMiniAppIndexRoute,
+diff --git a/src/renderer/utils/sidebar.ts b/src/renderer/utils/sidebar.ts
+index c7720b6..d7fe288 100644
+--- a/src/renderer/utils/sidebar.ts
++++ b/src/renderer/utils/sidebar.ts
+@@ -51,6 +51,7 @@ function getConversationSearchParamFromUrl(url: string, name: string): string |
+  * Order here is the canonical sidebar order and drives preference defaults.
+  */
+ const SIDEBAR_APP_DEFINITIONS = [
++  { id: 'yoyoking', routePrefix: '/app/yoyoking' },
+   {
+     id: 'agents',
+     routePrefix: '/app/agents',
+diff --git a/src/renderer/windows/main/index.html b/src/renderer/windows/main/index.html
+index 8958691..ca2b1cb 100644
+--- a/src/renderer/windows/main/index.html
++++ b/src/renderer/windows/main/index.html
+@@ -7,7 +7,7 @@
+     <meta
+       http-equiv="Content-Security-Policy"
+       content="default-src 'self'; connect-src blob: cherry-media: *; script-src 'self' 'unsafe-eval' 'unsafe-inline' *; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' *; font-src 'self' data: *; img-src 'self' data: file: * blob:; media-src 'self' cherry-media: file: http: https: blob:; frame-src * file:" />
+-    <title>Cherry Studio</title>
++    <title>Yoyoking Studio</title>
+ 
+     <style>
+       html,
+diff --git a/src/shared/data/preference/preferenceSchemas.ts b/src/shared/data/preference/preferenceSchemas.ts
+index 0598494..b1b583a 100644
+--- a/src/shared/data/preference/preferenceSchemas.ts
++++ b/src/shared/data/preference/preferenceSchemas.ts
+@@ -1,6 +1,6 @@
+ /**
+  * Auto-generated preferences configuration
+- * Generated at: 2026-10-23T04:12:24.095Z
++ * Generated at: 2026-10-26T11:36:10.272Z
+  *
+  * This file is automatically generated from classification.json
+  * To update this file, modify classification.json and run:
+@@ -56,7 +56,7 @@ export interface PreferenceSchemas {
+     'app.computer_use.agent_control.enabled': boolean
+     // redux/settings/enableDeveloperMode
+     'app.developer_mode.enabled': boolean
+-    // redux/settings/autoCheckUpdate
++    // target-key-definitions/complex/complex
+     'app.dist.auto_update.enabled': boolean
+     // redux/settings/testChannel
+     'app.dist.test_plan.channel': PreferenceTypes.UpgradeChannel
+@@ -84,7 +84,7 @@ export interface PreferenceSchemas {
+     'app.onboarding.provider_setup.status': PreferenceTypes.OnboardingProviderSetupStatus
+     // target-key-definitions/complex/complex
+     'app.power.prevent_sleep_when_busy': boolean
+-    // redux/settings/enableDataCollection
++    // target-key-definitions/complex/complex
+     'app.privacy.data_collection.enabled': boolean
+     // target-key-definitions/complex/complex
+     'app.privacy.policy_version': string
+@@ -541,6 +541,10 @@ export interface PreferenceSchemas {
+     // target-key-definitions/complex/complex
+     'feature.voice.speech.voice_id': string
+     // target-key-definitions/complex/complex
++    'feature.yoyoking.installation': { agentId?: string; douyinServerId?: string; editServerId?: string; hostServerId?: string }
++    // target-key-definitions/complex/complex
++    'feature.yoyoking.settings': import('@shared/types/yoyoking').YoyokingSettings
++    // target-key-definitions/complex/complex
+     'menu.presentation_mode': PreferenceTypes.MenuPresentationMode
+     // target-key-definitions/complex/complex
+     'shortcut.app.fullscreen.exit': PreferenceTypes.PreferenceShortcutType
+@@ -642,7 +646,7 @@ export const DefaultPreferences: PreferenceSchemas = {
+     'app.browser.open_links_in_browser': true,
+     'app.computer_use.agent_control.enabled': false,
+     'app.developer_mode.enabled': false,
+-    'app.dist.auto_update.enabled': true,
++    'app.dist.auto_update.enabled': false,
+     'app.dist.test_plan.channel': PreferenceTypes.UpgradeChannel.LATEST,
+     'app.dist.test_plan.enabled': false,
+     'app.fetch.allow_private_network': true,
+@@ -656,7 +660,7 @@ export const DefaultPreferences: PreferenceSchemas = {
+     'app.notification.update.enabled': false,
+     'app.onboarding.provider_setup.status': 'pending',
+     'app.power.prevent_sleep_when_busy': false,
+-    'app.privacy.data_collection.enabled': true,
++    'app.privacy.data_collection.enabled': false,
+     'app.privacy.policy_version': '',
+     'app.proxy.bypass_rules': '',
+     'app.proxy.mode': 'system',
+@@ -884,6 +888,8 @@ export const DefaultPreferences: PreferenceSchemas = {
+     'feature.voice.speech.model_id': '',
+     'feature.voice.speech.speed': 1,
+     'feature.voice.speech.voice_id': '',
++    'feature.yoyoking.installation': {  },
++    'feature.yoyoking.settings': { douyinEnabled: true, douyinSdkDirectory: '', jianyingExecutable: '', jianyingRuntime: '', mediaRoots: [] },
+     'menu.presentation_mode': 'cherry',
+     'shortcut.app.fullscreen.exit': { binding: ['Escape'], enabled: true },
+     'shortcut.app.print': { binding: ['CommandOrControl', 'P'], enabled: true },
+@@ -920,8 +926,8 @@ export const DefaultPreferences: PreferenceSchemas = {
+     'ui.custom_css': '',
+     'ui.launchpad.app_order': [],
+     'ui.navbar.position': 'top',
+-    'ui.sidebar.favorites': [{ id: 'agents', type: 'app' }, { id: 'assistants', type: 'app' }, { id: 'translate', type: 'app' }, { id: 'paintings', type: 'app' }, { id: 'knowledge', type: 'app' }],
+-    'ui.sidebar_shortcut': [{ id: 'sidebar-shortcut:core.app:agents', target: { kind: 'resource', locator: { providerId: 'core.app', resourceId: 'agents' } }, type: 'shortcut' }, { id: 'sidebar-shortcut:core.app:assistants', target: { kind: 'resource', locator: { providerId: 'core.app', resourceId: 'assistants' } }, type: 'shortcut' }, { id: 'sidebar-shortcut:core.app:translate', target: { kind: 'resource', locator: { providerId: 'core.app', resourceId: 'translate' } }, type: 'shortcut' }, { id: 'sidebar-shortcut:core.app:paintings', target: { kind: 'resource', locator: { providerId: 'core.app', resourceId: 'paintings' } }, type: 'shortcut' }, { id: 'sidebar-shortcut:core.app:knowledge', target: { kind: 'resource', locator: { providerId: 'core.app', resourceId: 'knowledge' } }, type: 'shortcut' }],
++    'ui.sidebar.favorites': [{ id: 'yoyoking', type: 'app' }, { id: 'agents', type: 'app' }, { id: 'assistants', type: 'app' }, { id: 'translate', type: 'app' }, { id: 'paintings', type: 'app' }, { id: 'knowledge', type: 'app' }],
++    'ui.sidebar_shortcut': [{ id: 'sidebar-shortcut:core.app:yoyoking', target: { kind: 'resource', locator: { providerId: 'core.app', resourceId: 'yoyoking' } }, type: 'shortcut' }, { id: 'sidebar-shortcut:core.app:agents', target: { kind: 'resource', locator: { providerId: 'core.app', resourceId: 'agents' } }, type: 'shortcut' }, { id: 'sidebar-shortcut:core.app:assistants', target: { kind: 'resource', locator: { providerId: 'core.app', resourceId: 'assistants' } }, type: 'shortcut' }, { id: 'sidebar-shortcut:core.app:translate', target: { kind: 'resource', locator: { providerId: 'core.app', resourceId: 'translate' } }, type: 'shortcut' }, { id: 'sidebar-shortcut:core.app:paintings', target: { kind: 'resource', locator: { providerId: 'core.app', resourceId: 'paintings' } }, type: 'shortcut' }, { id: 'sidebar-shortcut:core.app:knowledge', target: { kind: 'resource', locator: { providerId: 'core.app', resourceId: 'knowledge' } }, type: 'shortcut' }],
+     'ui.theme_mode': PreferenceTypes.ThemeMode.system,
+     'ui.theme_user.code_font_family': '',
+     'ui.theme_user.color_primary': '#00b96b',
+@@ -935,9 +941,9 @@ export const DefaultPreferences: PreferenceSchemas = {
+ 
+ /**
+  * 生成统计:
+- * - 总配置项: 295
++ * - 总配置项: 297
+  * - electronStore项: 2
+- * - redux项: 173
++ * - redux项: 171
+  * - localStorage项: 0
+  * - dexieSettings项: 5
+  */
+\ No newline at end of file
+diff --git a/src/shared/data/preference/preferenceTypes.ts b/src/shared/data/preference/preferenceTypes.ts
+index c60f5db..ef38701 100644
+--- a/src/shared/data/preference/preferenceTypes.ts
++++ b/src/shared/data/preference/preferenceTypes.ts
+@@ -121,6 +121,7 @@ export const SIDEBAR_FAVORITES = [
+   'files',
+   'code_tools',
+   'notes',
++  'yoyoking',
+   'openclaw'
+ ] as const
+ 
+diff --git a/src/shared/ipc/schemas/ipcSchemas.ts b/src/shared/ipc/schemas/ipcSchemas.ts
+index 2c20c6f..1a41450 100644
+--- a/src/shared/ipc/schemas/ipcSchemas.ts
++++ b/src/shared/ipc/schemas/ipcSchemas.ts
+@@ -47,6 +47,7 @@ import { type VoiceEventSchemas, voiceRequestSchemas } from './voice'
+ import { webSearchRequestSchemas } from './webSearch'
+ import { type WebviewEventSchemas, webviewRequestSchemas } from './webview'
+ import { type WindowEventSchemas, windowRequestSchemas } from './window'
++import { yoyokingRequestSchemas } from './yoyoking'
+ 
+ /**
+  * Global request registry — the single source of truth the main router parses
+@@ -56,6 +57,7 @@ import { type WindowEventSchemas, windowRequestSchemas } from './window'
+  * never enter the renderer bundle (see ipc-overview.md, "zod across processes").
+  */
+ export const ipcRequestSchemas = {
++  ...yoyokingRequestSchemas,
+   ...aiRequestSchemas,
+   ...voiceRequestSchemas,
+   ...apiGatewayRequestSchemas,
+@@ -115,7 +117,7 @@ export type IpcRoute = keyof IpcRequestSchemas
+  * the renderer trusts them and never re-parses). Each migrated domain intersects
+  * its own `*EventSchemas` type here.
+  */
+-export type IpcEventSchemas = AiEventSchemas &
++export type IpcEventSchemas = { 'yoyoking.preview.requested': { path: string } } & AiEventSchemas &
+   ApiGatewayEventSchemas &
+   AppEventSchemas &
+   BackupEventSchemas &
+diff --git a/src/shared/utils/constants.ts b/src/shared/utils/constants.ts
+index 9d9a949..992248e 100644
+--- a/src/shared/utils/constants.ts
++++ b/src/shared/utils/constants.ts
+@@ -2,5 +2,5 @@ export const KB = 1024
+ export const MB = 1024 * KB
+ export const GB = 1024 * MB
+ 
+-export const APP_NAME = 'Cherry Studio'
++export const APP_NAME = 'Yoyoking Studio'
+ export const LATEST_PRIVACY_POLICY_VERSION = '20260820'
+diff --git a/.agents/notes/proposed/architecture/2026-10-26-yoyoking-desktop-integration.i18n.yaml b/.agents/notes/proposed/architecture/2026-10-26-yoyoking-desktop-integration.i18n.yaml
+new file mode 100644
+--- /dev/null
++++ b/.agents/notes/proposed/architecture/2026-10-26-yoyoking-desktop-integration.i18n.yaml
+@@ -0,0 +1,5 @@
++# Bilingual-pair consistency record (docs/i18n/README.md).
++# After editing either side, update its counterpart and re-record with:
++#   pnpm docs:check-pairing --write .agents/notes/proposed/architecture/2026-10-26-yoyoking-desktop-integration.md
++2026-10-26-yoyoking-desktop-integration.md: 53b16616279b773dd97695a4b3ebe9ccd63cfe42
++2026-10-26-yoyoking-desktop-integration.zh.md: 8e7c8209546ecdb17f1f591bd7931cc1509a40ad
+diff --git a/.agents/notes/proposed/architecture/2026-10-26-yoyoking-desktop-integration.md b/.agents/notes/proposed/architecture/2026-10-26-yoyoking-desktop-integration.md
+new file mode 100644
+--- /dev/null
++++ b/.agents/notes/proposed/architecture/2026-10-26-yoyoking-desktop-integration.md
+@@ -0,0 +1,53 @@
++# Agent Note: Integrate Yoyoking into a Cherry Studio desktop derivative
++
++Status: proposed
++
++English | [中文](2026-10-26-yoyoking-desktop-integration.zh.md)
++
++## Problem
++
++The local jy-draftc project provides an independent Python editing MCP, a native draft converter/exporter, Harness-specific video and Douyin adapters, and a Windows Jianying window-host POC. The user requests a Cherry Studio derivative incorporating all four capabilities: editing, video preview, native project integration, and Douyin account access. They confirmed this scope on 2026-10-26. The current checkout contains uncommitted work that must survive migration.
++
++The baseline is Cherry Studio 2.1.8 at `de8d659dbe23753fe62e86330483c10c88007566`. This is a local integration proposal, not a claim that the migration or runtime acceptance has passed. No remote PR, application installation, account login, or native editor operation has been performed.
++
++## Proposal
++
++Build a Windows x64 desktop derivative with a dedicated editing workbench. Reuse Cherry's models, conversations, Agent runtime, MCP runtime, Skill library, IpcApi, Preference, Cache, DataApi, lifecycle container, path registry, UI components, and localization. Use an independent application identity and data directory; the working name is Yoyoking Studio. Do not inherit the official updater distribution channel.
++
++Keep Python editing and the native converter independently versioned. Register the stdio service through existing MCP APIs, attach it to the editing Agent, and adapt the existing editing Skills to discovered tool names and the new host. Development may reference the sibling backend checkout; packaged builds must carry pinned runtime resources and cannot rely on developer paths. Preserve revisions, operation receipts, pagination, source hashes, media-root checks, native references, and time units.
++
++Place host adapters under `src/main/features/yoyoking/`, the workbench under `src/renderer/pages/yoyoking/`, its route under `src/renderer/routes/app/`, and command schemas/handlers in the existing IpcApi domains. Do not load the Harness plugin manifest or create another Agent/MCP container. Make the combined source layout reproducible before treating the local nested checkout as distributable source.
++
++Extend the existing media protocol with file-backed video entries and streaming single-range reads. Its present Buffer store is not suitable for loading whole MP4 files. Retain trusted-window provenance, explicit entry ownership, realpath checks, GET/HEAD behavior, and deterministic revocation. Reuse the current preview's contracts rather than exposing an arbitrary-path HTTP server.
++
++Adapt the Windows helper and current-project reader to the new Electron host. Select ambiguous windows explicitly. Preserve native window restoration, lock-owner verification, stable snapshots, authoritative main-timeline resolution, and copy-on-write edits. Identify current-project reads as last-saved disk snapshots with unknown unsaved changes; backend success does not establish native UI open/playback/save acceptance.
++
++Adapt the existing Douyin managed process and in-memory OAuth implementation to a lifecycle-owned application service. Share login across the derivative's own sessions, release it on application exit, revoke associated tools on disconnect, and leave editing usable if the external SDK is unavailable. Reuse or improve Cherry's authenticated MCP transport extension point; do not persist transient access tokens in MCP headers. Official authorization remains a user action. Keep the existing data/download/export scope and serial request intervals of at least five seconds.
++
++Implement sequentially: independent application and workbench; editing MCP/Skills and real export; streamed preview; native editor integration; Douyin; packaged acceptance. Keep each incomplete criterion visibly pending. Ship license and provenance notices for the Cherry and MIT components; treat the user-provided Douyin SDK as an external runtime rather than silently redistributing it.
++
++## Alternatives considered
++
++- Only add an MCP configuration to an unmodified Cherry installation: exposes editing tools but does not deliver the requested integrated preview, native editor, account panel, or derivative application.
++- Copy the Harness plugin into Cherry unchanged: its Cordis services, tool registration, UI slots, and lifecycle do not match Cherry's APIs.
++- Rewrite editing in TypeScript or add a second model/Agent/MCP stack: duplicates working capabilities and loses existing validation and revision behavior.
++- Store whole videos in the current Buffer media store or expose arbitrary local file URLs: the former scales memory with asset size; the latter loses the existing authorization and ownership boundary.
++- Rewrite the parent repository around the upstream tree immediately: risks uncommitted work and makes the backend's source ownership and upstream history harder to review.
++
++## Acceptance criteria
++
++- AC1 — An independently identified Windows application opens the editing workbench without altering existing Cherry or Harness user data or using the official Cherry updater channel. (verification: Electron)
++- AC2 — A reproducible checkout and packaged resource manifest resolve the pinned Python backend, native helper and Skills without developer-machine absolute paths or copied credentials. (verification: packaged artifact)
++- AC3 — The editing Agent discovers the real MCP tools and loads the adapted editing Skills; unrelated sessions retain their own configured tool scope. (verification: Electron)
++- AC4 — Synthetic media completes project creation, revision-guarded edits, snapshot, native export and terminal job readback; decoding, duration, dimensions and source hashes are independently checked. (verification: Electron)
++- AC5 — Authorized videos play and seek through mouse interaction with GET/HEAD and range responses; escaped paths and released entries cannot be read, and opening a large file does not buffer the whole file. (verification: Electron)
++- AC6 — Native editor selection, attach, project reading and normal detach preserve the selected PID/window binding, source hashes and snapshot semantics, including rejection of ambiguity or concurrent source changes. (verification: Electron)
++- AC7 — A separate test draft supports real playback, keyboard and Chinese input, resizing, tab switching, save/reopen and original-window restoration in the derivative; backend-only results cannot satisfy this criterion. (verification: Electron)
++- AC8 — The account panel starts its owned SDK, completes user-confirmed official authorization, shares login only within the application, revokes tools on disconnect, and leaves no owned SDK process after exit. (verification: Electron)
++- AC9 — After real authorization, bounded Douyin reads, a download and an Excel export preserve tool receipts and have independently inspected outputs; synthetic OAuth tests alone cannot satisfy this criterion. (verification: Electron)
++- AC10 — The Windows package repeats the editing, preview, native-window and account acceptance from a standalone directory and reports its actual signing state, including NotSigned when unsigned. (verification: packaged artifact)
++- AC11 — The bilingual proposal remains proposed until every criterion has evidence, with incomplete runtime or account checks explicitly recorded rather than inferred from successful builds or fixtures. (verification: docs gate)
++
++## Risks
++
++Jianying window behavior and native rendering depend on separately verified versions; their compatibility cannot be inferred from each other. The Windows embedding code remains a POC until the new host passes real interaction checks. The external SDK and official account authorization are prerequisites for real Douyin acceptance. Native dependencies and bundled Python resources require packaged execution checks. Cherry's existing media and OAuth extension points may need scoped improvements before the adapters can meet their contracts. Preserve existing dirty work and user sessions throughout; do not install over an existing desktop application or terminate its host as part of preparing this proposal.
+diff --git a/.agents/notes/proposed/architecture/2026-10-26-yoyoking-desktop-integration.zh.md b/.agents/notes/proposed/architecture/2026-10-26-yoyoking-desktop-integration.zh.md
+new file mode 100644
+--- /dev/null
++++ b/.agents/notes/proposed/architecture/2026-10-26-yoyoking-desktop-integration.zh.md
+@@ -0,0 +1,53 @@
++# Agent Note: 将 Yoyoking 集成到基于 Cherry Studio 的桌面应用
++
++Status: proposed
++
++[English](2026-10-26-yoyoking-desktop-integration.md) | 中文
++
++## 问题
++
++本地 jy-draftc 项目包含独立的 Python 剪辑 MCP、原生草稿转换与导出器、依赖 Harness 的视频和抖音适配层，以及 Windows 剪映窗口承载 POC。用户要求基于 Cherry Studio 二次开发，并接入剪辑、视频预览、原生工程联动和抖音账号四类能力，已于 2026-10-26 确认完整范围。当前工作区的未提交改动必须在迁移中保留。
++
++底座固定为 Cherry Studio 2.1.8，提交 `de8d659dbe23753fe62e86330483c10c88007566`。本文是本地集成提案，不表示迁移或运行时验收已经通过。尚未创建远端 PR、安装应用、登录账号或操作原生编辑器。
++
++## 提案
++
++构建 Windows x64 桌面派生应用，提供独立剪辑工作台。复用 Cherry 的模型、对话、Agent runtime、MCP runtime、Skill 库、IpcApi、Preference、Cache、DataApi、生命周期容器、路径注册表、UI 组件和国际化。使用独立应用身份及数据目录，暂名 Yoyoking Studio；不继承官方更新分发渠道。
++
++Python 剪辑后端和原生转换器独立管理版本。通过现有 MCP API 注册 stdio 服务并关联剪辑 Agent，将现有剪辑 Skill 适配到实时发现的工具名与新宿主。开发阶段可引用旁边的后端 checkout，发行包必须携带固定运行时资源，不能依赖开发机路径。保留 revision、操作回执、分页、源哈希、素材目录检查、原生引用和时间单位。
++
++宿主适配放在 `src/main/features/yoyoking/`，工作台放在 `src/renderer/pages/yoyoking/`，路由放在 `src/renderer/routes/app/`，命令 schema/handler 接入现有 IpcApi domain。不加载 Harness 插件 manifest，也不增加第二套 Agent/MCP 容器。先实现可复现的组合源码布局，再将本地嵌套 checkout 视为可交付源码。
++
++为现有媒体协议增加文件型视频 entry 和单区间流式读取。当前 Buffer 存储不适合装入完整 MP4。保留可信窗口来源校验、明确的 entry 所有权、realpath 检查、GET/HEAD 行为和确定性撤销。复用现有预览契约，不暴露任意路径 HTTP 服务。
++
++将 Windows helper 和当前工程读取器适配到新 Electron 宿主。窗口有歧义时明确选择。保留原生窗口恢复、锁持有者验证、稳定快照、有效主时间线解析及副本编辑。当前工程读取标记为最近保存的磁盘快照，未保存修改未知；后端成功不能证明原生 UI 打开、播放和保存通过。
++
++将现有抖音托管进程和内存 OAuth 实现适配为应用生命周期服务。只在派生应用自身会话间共享登录，退出应用时释放，断开账号时撤销关联工具；外部 SDK 不可用时剪辑仍能使用。复用或改进 Cherry 已认证 MCP 传输的扩展点，不把短期 access token 持久化到 MCP headers。官方授权仍由用户操作。维持现有数据、下载、导出范围，以及串行且至少五秒的请求间隔。
++
++依次实施：独立应用和工作台；剪辑 MCP/Skill 与真实导出；流式预览；原生编辑器联动；抖音；打包验收。每项未满足的验收标准保持明确待完成。随包保留 Cherry 和 MIT 组件的许可证与来源声明；用户提供的 Douyin SDK 作为外部运行时，不直接随包再分发。
++
++## 备选方案
++
++- 只在未修改的 Cherry 中增加 MCP 配置：能够提供剪辑工具，但无法交付所需的集成预览、原生编辑器、账号面板和派生应用。
++- 原样复制 Harness 插件到 Cherry：其 Cordis 服务、工具注册、UI 插槽及生命周期与 Cherry API 不匹配。
++- 将剪辑重写为 TypeScript 或增加第二套模型/Agent/MCP：重复现有能力，并丢失既有验证及 revision 行为。
++- 将完整视频放入当前 Buffer 媒体存储，或直接暴露任意本地文件 URL：前者内存随素材大小增长，后者丢失现有授权与所有权边界。
++- 立即用上游目录树重写父仓库：可能影响未提交改动，也使后端源码归属与上游历史更难审阅。
++
++## 验收标准
++
++- AC1 — 独立身份的 Windows 应用能打开剪辑工作台，且不修改现有 Cherry/Harness 用户数据、不使用 Cherry 官方更新源。 (verification: Electron)
++- AC2 — 可复现 checkout 和打包资源清单能解析固定 Python 后端、原生 helper 和 Skill，不依赖开发机绝对路径或复制的凭据。 (verification: packaged artifact)
++- AC3 — 剪辑 Agent 能发现真实 MCP 工具并加载适配后的剪辑 Skill，无关会话维持各自配置的工具作用域。 (verification: Electron)
++- AC4 — 合成素材完成工程创建、revision 保护编辑、快照、原生导出及任务终态回读，解码、时长、尺寸和源哈希经独立检查。 (verification: Electron)
++- AC5 — 授权视频支持鼠标播放和拖动、GET/HEAD 与 Range 响应；越界路径和已释放 entry 无法读取，打开大文件不缓存整段内容。 (verification: Electron)
++- AC6 — 原生编辑器选择、接入、工程读取及正常脱离保留选定 PID/窗口绑定、源哈希及快照语义，并拒绝歧义和源文件并发变化。 (verification: Electron)
++- AC7 — 独立测试草稿在派生应用中通过真实播放、键盘和中文输入、缩放、页签切换、保存重开及原窗口恢复，仅后端结果不能满足此项。 (verification: Electron)
++- AC8 — 账号面板启动自有 SDK、完成用户确认的官方授权、仅在应用内共享登录、断开时撤销工具，退出后无残留自有 SDK 进程。 (verification: Electron)
++- AC9 — 真实授权后完成有界抖音读取、一次下载与一次 Excel 导出，保留工具回执并独立检查输出；合成 OAuth 测试不能满足此项。 (verification: Electron)
++- AC10 — Windows 分发包从独立目录重复完成剪辑、预览、原生窗口和账号验收，并报告实际签名状态，未签名时标记 NotSigned。 (verification: packaged artifact)
++- AC11 — 双语提案在每项标准都有证据前保持 proposed，明确记录未完成的运行时或账号检查，不从构建或夹具成功推断完成。 (verification: docs gate)
++
++## 风险
++
++剪映窗口行为与原生渲染分别依赖经验证的版本，不能相互推断兼容性。Windows 承载代码在新宿主完成真实交互验收前仍属于 POC。真实抖音验收需要外部 SDK 与官方账号授权。原生依赖及 Python 运行时资源必须经打包执行检查。Cherry 现有媒体及 OAuth 扩展点可能需要范围明确的改进后，适配层才能满足契约。整个过程保留既有未提交改动和用户会话；准备本提案不覆盖现有桌面安装，也不终止其宿主。
+diff --git a/src/main/features/yoyoking/NativeEditor.ts b/src/main/features/yoyoking/NativeEditor.ts
+new file mode 100644
+--- /dev/null
++++ b/src/main/features/yoyoking/NativeEditor.ts
+@@ -0,0 +1,195 @@
++import { execFile, spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
++import { join } from 'node:path'
++import { pathToFileURL } from 'node:url'
++import { promisify } from 'node:util'
++
++import type { BrowserWindow } from 'electron'
++
++import type { NativeViewport } from '@shared/types/yoyoking'
++
++const exec = promisify(execFile)
++type WindowInfo = { hwnd: number; pid: number; parent: number; path: string; visible: boolean; title: string }
++
++export class NativeEditor {
++  private child?: ChildProcessWithoutNullStreams
++  private owner?: BrowserWindow
++  private target?: WindowInfo
++  private controller?: string
++  private panel?: WindowInfo
++  private active = false
++  private stopping?: Promise<Record<string, unknown>>
++  private lastHeartbeat = 0
++  private lastScan = 0
++  private restoration: Record<string, unknown> | null = null
++  private transition = Promise.resolve<unknown>(undefined)
++
++  constructor(private runtime: string) {}
++
++  private native = async (...args: string[]): Promise<WindowInfo[]> => {
++    const { stdout } = await exec(join(this.runtime, 'bin/window-host.exe'), args, {
++      windowsHide: true,
++      timeout: 5000,
++      encoding: 'utf8',
++      maxBuffer: 4 * 1024 * 1024
++    })
++    return stdout
++      .trim()
++      .split(/\r?\n/)
++      .filter(Boolean)
++      .map((line) => JSON.parse(line))
++  }
++
++  status(): Record<string, unknown> {
++    return { active: this.active, target: this.target, panel: this.panel, restoration: this.restoration }
++  }
++
++  async list(): Promise<Record<string, unknown>[]> {
++    if (process.platform !== 'win32') throw new Error('Windows is required for the native editor')
++    const { selectEditor } = await import(pathToFileURL(join(this.runtime, 'adapters/selection.js')).href)
++    return selectEditor(await this.native('list')).candidates
++  }
++
++  exclusive<T>(action: () => Promise<T>): Promise<T> {
++    const result = this.transition.then(action)
++    this.transition = result.catch(() => undefined)
++    return result
++  }
++
++  async attach(owner: BrowserWindow, hwnd: number, viewport: NativeViewport): Promise<Record<string, unknown>> {
++    if (this.active) throw new Error('Detach the current editor before attaching another')
++    const { selectEditor } = await import(pathToFileURL(join(this.runtime, 'adapters/selection.js')).href)
++    const selected = selectEditor(await this.native('list'), hwnd).selected as WindowInfo | undefined
++    if (!selected) throw new Error('The selected Jianying window is no longer available')
++    const nativeHandle = owner.getNativeWindowHandle()
++    const ownerHwnd = Number(nativeHandle.length === 8 ? nativeHandle.readBigUInt64LE() : nativeHandle.readUInt32LE())
++    this.owner = owner
++    this.controller = viewport.ownerId
++    this.target = selected
++    this.restoration = null
++    const child = spawn(join(this.runtime, 'bin/window-host.exe'), ['panel', String(hwnd), String(ownerHwnd), '1800'], {
++      windowsHide: true,
++      stdio: ['pipe', 'pipe', 'pipe']
++    })
++    this.child = child
++    const closed = () => {
++      void this.detach().catch(() => {})
++    }
++    owner.once('closed', closed)
++    child.stdin.on('error', () => {})
++    child.stderr.resume()
++    child.once('exit', () => {
++      this.active = false
++      owner.removeListener('closed', closed)
++    })
++    let buffer = ''
++    try {
++      await new Promise<void>((resolve, reject) => {
++        const timer = setTimeout(() => reject(new Error('Native attach timed out')), 8000)
++        const finish = (error?: Error) => {
++          clearTimeout(timer)
++          error ? reject(error) : resolve()
++        }
++        child.once('error', finish)
++        child.once('exit', () => finish(new Error('Native editor closed during attach')))
++        child.stdout.on('data', (bytes) => {
++          buffer += bytes.toString('utf8')
++          if (buffer.length > 1024 * 1024) {
++            finish(new Error('Invalid native response'))
++            child.stdin.end('detach\n')
++            return
++          }
++          let index: number
++          while ((index = buffer.indexOf('\n')) >= 0) {
++            const line = buffer.slice(0, index)
++            buffer = buffer.slice(index + 1)
++            let event: Record<string, any>
++            try {
++              event = JSON.parse(line)
++            } catch {
++              continue
++            }
++            if (event.event === 'native_panel') {
++              this.panel = event.panel
++              if (event.electronOwner.hwnd !== ownerHwnd) finish(new Error('Native owner mismatch'))
++            }
++            if (event.event === 'attached') {
++              this.active = true
++              finish()
++            }
++            if (event.event === 'restored') this.restoration = event
++            if (event.event === 'rejected' || event.event === 'attach_failed') finish(new Error(String(event.reason)))
++          }
++        })
++      })
++      await this.sync(owner, viewport)
++      return this.status()
++    } catch (error) {
++      await this.detach()
++      throw error
++    }
++  }
++
++  async sync(owner: BrowserWindow, input: NativeViewport): Promise<Record<string, unknown>> {
++    if (this.owner !== owner) throw new Error('This window does not own the native editor')
++    if (this.controller !== input.ownerId) return { active: false, status: 'another_tab_active' }
++    this.lastHeartbeat = Date.now()
++    if (this.active) {
++      if (input.visible && this.target && Date.now() - this.lastScan > 750) {
++        this.lastScan = Date.now()
++        const family = await this.native('family', String(this.target.pid))
++        const current = family.find((window) => window.hwnd === this.target!.hwnd)
++        if (current?.visible === false) {
++          const { replacementEditor } = await import(pathToFileURL(join(this.runtime, 'adapters/selection.js')).href)
++          const replacement = replacementEditor(family, this.target)
++          if (replacement.selected) {
++            await this.detach(owner, true)
++            return this.attach(owner, replacement.selected.hwnd, input)
++          }
++          if (replacement.status === 'choose_window') {
++            this.child?.stdin.write('hide\n')
++            return { ...this.status(), status: 'choose_window', candidates: replacement.candidates }
++          }
++        }
++      }
++      if (!input.visible) this.child?.stdin.write('hide\n')
++      else {
++        const { x, y, width, height, viewportWidth, viewportHeight } = input
++        if (x + width > viewportWidth || y + height > viewportHeight) throw new Error('Invalid native viewport')
++        this.child?.stdin.write(`viewport ${x} ${y} ${width} ${height} ${viewportWidth} ${viewportHeight}\n`)
++      }
++    }
++    return this.status()
++  }
++
++  suspendExpired(): void {
++    if (this.active && Date.now() - this.lastHeartbeat > 5000) this.child?.stdin.write('hide\n')
++  }
++
++  async detach(owner?: BrowserWindow, handoff = false, ownerId?: string): Promise<Record<string, unknown>> {
++    if (ownerId && ownerId !== this.controller) return { active: false, status: 'another_tab_active' }
++    if (owner && owner !== this.owner) throw new Error('This window does not own the native editor')
++    if (this.stopping) return this.stopping
++    const child = this.child
++    if (!child || child.exitCode !== null) return this.status()
++    this.stopping = new Promise<Record<string, unknown>>((resolve, reject) => {
++      const timer = setTimeout(() => reject(new Error('Native window restoration was not confirmed')), 10000)
++      child.once('exit', (code) => {
++        clearTimeout(timer)
++        this.child = undefined
++        if ((code === 0 && this.restoration?.ok) || code === 70) resolve(this.status())
++        else reject(new Error('Native window restoration failed'))
++      })
++      child.stdin.end(handoff ? 'handoff\n' : 'detach\n')
++    })
++    try {
++      return await this.stopping
++    } finally {
++      this.stopping = undefined
++    }
++  }
++
++  async currentProject(config: Record<string, unknown>): Promise<Record<string, unknown>> {
++    const { readCurrentProject } = await import(pathToFileURL(join(this.runtime, 'adapters/current-project.js')).href)
++    return readCurrentProject(config, () => this.status(), this.native)
++  }
++}
+diff --git a/src/main/features/yoyoking/README.md b/src/main/features/yoyoking/README.md
+new file mode 100644
+--- /dev/null
++++ b/src/main/features/yoyoking/README.md
+@@ -0,0 +1,13 @@
++# Yoyoking host integration
++
++`YoyokingService` owns application-level editing setup, preview leases, native editor ownership and the managed Douyin process. It uses existing MCP, Skill, Agent, Preference, IpcApi, path-registry and lifecycle APIs. Editing operations remain in the independent Python backend.
++
++`NativeEditor` wraps the existing Win32 helper. A managed Electron window and a per-pane UUID jointly own an attachment. The renderer never supplies the host HWND. Fresh inventories select the exact target HWND, replacement windows remain in the selected PID, and detach waits for a native restoration receipt. Current-project reads reuse the lock-owner and stable-snapshot implementation and return last-saved disk state.
++
++Runtime resources are generated from the parent repository by `scripts/prepare-cherry-runtime.mjs`, checked against `manifest.json`, and loaded from the registered `feature.yoyoking.runtime` path. Source adapters are derived from the existing host-independent implementation; Harness registration and UI manifests are not loaded. The external Douyin SDK and credentials are not copied into these resources.
++
++The MCP runtime accepts registered local endpoint factories and memory-only authenticated fetch functions. Revoking a registration stops its connections and clears catalog state. Douyin server metadata contains the loopback URL and an `ephemeral-auth` tag, never a token. Without the owned authenticated registration, that tag refuses connection. Disconnect removes the account's MCP association and disables its Skill for the editing Agent.
++
++File preview permissions follow the configured media roots and application workspace. Narrowing configuration disables the previous editing server until setup updates its environment; already-created preview entries are revoked. Preview tool results request playback in the workbench and do not claim visual inspection by the model.
++
++Verification uses file-video boundary tests, existing MCP and navigation consumers, a synthetic editing/export flow in real Electron, and an independent Win32 fixture attached to that Electron host. Fixture success is separate from real Jianying project open/playback/save and from real Douyin authorization and account output validation.
+diff --git a/src/main/features/yoyoking/YoyokingService.ts b/src/main/features/yoyoking/YoyokingService.ts
+new file mode 100644
+--- /dev/null
++++ b/src/main/features/yoyoking/YoyokingService.ts
+@@ -0,0 +1,465 @@
++import { execFile, spawn } from 'node:child_process'
++import { createHash, randomUUID } from 'node:crypto'
++import { mkdir, readFile, realpath } from 'node:fs/promises'
++import { basename, dirname, extname, isAbsolute, join, relative } from 'node:path'
++import { pathToFileURL } from 'node:url'
++import { promisify } from 'node:util'
++
++import { auth } from '@modelcontextprotocol/client'
++import { McpServer as ProtocolServer } from '@modelcontextprotocol/server'
++import { type BrowserWindow, shell } from 'electron'
++import * as z from 'zod'
++
++import { application } from '@application'
++import { agentService } from '@data/services/AgentService'
++import { mcpServerService } from '@data/services/McpServerService'
++import { loggerService } from '@logger'
++import { skillService } from '@main/ai/skills/SkillService'
++import { BaseService, DependsOn, Injectable, Phase, ServicePhase } from '@main/core/lifecycle'
++import { resolveVideoPath } from '@main/services/mediaProtocol'
++import { getBinaryPath } from '@main/utils/binaryResolver'
++import type { CreateMcpServerDto } from '@shared/data/api/schemas/mcpServers'
++import type { McpServer } from '@shared/data/types/mcpServer'
++import { UniqueModelIdSchema } from '@shared/data/types/model'
++import { type YoyokingSettings, YoyokingSettingsSchema, type YoyokingStatus } from '@shared/types/yoyoking'
++
++import { NativeEditor } from './NativeEditor'
++
++const logger = loggerService.withContext('YoyokingService')
++const exec = promisify(execFile)
++type Installation = { editServerId?: string; hostServerId?: string; douyinServerId?: string; agentId?: string }
++const videoTypes: Record<string, string> = {
++  '.mp4': 'video/mp4',
++  '.m4v': 'video/mp4',
++  '.mov': 'video/quicktime',
++  '.webm': 'video/webm',
++  '.mkv': 'video/x-matroska'
++}
++
++@Injectable('YoyokingService')
++@ServicePhase(Phase.WhenReady)
++@DependsOn(['McpRuntimeService', 'MediaProtocolService', 'WindowManager'])
++export class YoyokingService extends BaseService {
++  private native!: NativeEditor
++  private toolNames: string[] = []
++  private skillNames: string[] = []
++  private host: any
++  private revokeDouyin?: () => Promise<void>
++  private revokeHost?: () => Promise<void>
++  private previews = new Map<string, { windowId: number; release: () => void }>()
++  private setupTask?: Promise<YoyokingStatus>
++  private accountQueue = Promise.resolve()
++  private generation = -1
++  private douyinToolNames: string[] = []
++  private accountSyncFailed = false
++  private stopping = false
++
++  private runtime(): string {
++    return application.getPath('feature.yoyoking.runtime')
++  }
++  private workspace(): string {
++    return application.getPath('feature.yoyoking.workspace')
++  }
++  private installation(): Installation {
++    return application.get('PreferenceService').get('feature.yoyoking.installation')
++  }
++  private settings(): YoyokingSettings {
++    return YoyokingSettingsSchema.parse(application.get('PreferenceService').get('feature.yoyoking.settings'))
++  }
++
++  protected async onInit(): Promise<void> {
++    this.native = new NativeEditor(this.runtime())
++    this.registerInterval(() => this.native.suspendExpired(), 1000)
++    const installed = this.installation()
++    if (installed.douyinServerId && mcpServerService.getById(installed.douyinServerId)) {
++      mcpServerService.update(installed.douyinServerId, { isActive: false })
++    }
++    if (installed.hostServerId && mcpServerService.getById(installed.hostServerId)) {
++      this.revokeHost = application
++        .get('McpRuntimeService')
++        .registerLocalEndpoint(installed.hostServerId, async () => ({
++          createServer: () => this.createHostServer(),
++          close: async () => {}
++        }))
++    }
++    if (this.settings().douyinEnabled) await this.startDouyin()
++  }
++
++  protected async onStop(): Promise<void> {
++    this.stopping = true
++    try {
++      await this.setupTask?.catch(() => {})
++      await this.host?.dispose()
++      await this.accountQueue
++      await this.revokeDouyin?.()
++      await this.revokeHost?.()
++    } finally {
++      for (const entry of this.previews.values()) entry.release()
++      this.previews.clear()
++      await this.native.exclusive(() => this.native.detach())
++    }
++  }
++
++  status(): YoyokingStatus {
++    const installed = this.installation()
++    return {
++      settings: this.settings(),
++      workspace: this.workspace(),
++      editServerId: installed.editServerId ?? null,
++      agentId: installed.agentId ?? null,
++      toolNames: this.toolNames,
++      skillNames: this.skillNames,
++      douyin: {
++        ...(this.host?.status() ?? { state: 'disconnected', service_state: 'stopped' }),
++        tool_names: this.douyinToolNames,
++        tools_state: this.douyinToolNames.length ? 'connected' : 'disconnected'
++      }
++    }
++  }
++
++  async configure(settings: YoyokingSettings): Promise<void> {
++    if (this.setupTask) throw new Error('Wait for setup to complete before changing settings')
++    const canonicalRoots = await Promise.all(settings.mediaRoots.map((path) => realpath(path)))
++    await this.native.exclusive(() => this.native.detach())
++    await this.host?.dispose()
++    await this.accountQueue
++    this.host = undefined
++    await this.revokeDouyin?.()
++    this.revokeDouyin = undefined
++    await application
++      .get('PreferenceService')
++      .set('feature.yoyoking.settings', { ...settings, mediaRoots: [...new Set(canonicalRoots)] })
++    for (const entry of this.previews.values()) entry.release()
++    const installed = this.installation()
++    if (installed.editServerId && mcpServerService.getById(installed.editServerId)) {
++      mcpServerService.update(installed.editServerId, { isActive: false })
++      await application.get('McpRuntimeService').stopServer(installed.editServerId)
++    }
++    this.toolNames = []
++  }
++
++  private ensureServer(id: string | undefined, config: CreateMcpServerDto): McpServer {
++    const existing = id ? mcpServerService.getById(id) : null
++    return existing ? mcpServerService.update(existing.id, config) : mcpServerService.create(config)
++  }
++
++  setup(): Promise<YoyokingStatus> {
++    return (this.setupTask ??= this.install().finally(() => {
++      this.setupTask = undefined
++    }))
++  }
++
++  private async install(): Promise<YoyokingStatus> {
++    if (this.stopping) throw new Error('Application is stopping')
++    const settings = this.settings(),
++      runtime = this.runtime(),
++      workspace = this.workspace()
++    await mkdir(workspace, { recursive: true })
++    const backend = join(runtime, 'backend')
++    const manifest = JSON.parse(await readFile(join(runtime, 'manifest.json'), 'utf8')) as {
++      files: { path: string; sha256: string }[]
++    }
++    for (const file of manifest.files) {
++      const target = await realpath(join(runtime, file.path)),
++        child = relative(runtime, target)
++      if (!child || child.startsWith('..') || isAbsolute(child)) throw new Error('Invalid runtime resource path')
++      if (
++        createHash('sha256')
++          .update(await readFile(target))
++          .digest('hex') !== file.sha256
++      )
++        throw new Error(`Runtime integrity check failed: ${file.path}`)
++    }
++    const installed = this.installation()
++    const edit = this.ensureServer(installed.editServerId, {
++      name: 'yoyoking-edit',
++      type: 'stdio',
++      command: 'uv',
++      args: ['run', '--project', backend, '--directory', backend, '--frozen', '--no-dev', 'jy-edit-mcp'],
++      env: {
++        PYTHONUTF8: '1',
++        PYTHONIOENCODING: 'utf-8',
++        PYTHONDONTWRITEBYTECODE: '1',
++        UV_PROJECT_ENVIRONMENT: application.getPath('feature.yoyoking.python_env'),
++        JY_EDIT_WORKSPACE: workspace,
++        JY_EDIT_MEDIA_ROOTS: JSON.stringify(settings.mediaRoots),
++        JY_DRAFTC_EXE: join(runtime, 'bin/jy-draftc.exe'),
++        JY_INSTALL_DIR: settings.jianyingRuntime
++      },
++      timeout: 300,
++      isActive: true,
++      installSource: 'manual',
++      tags: ['yoyoking']
++    })
++    installed.editServerId = edit.id
++    await application.get('PreferenceService').set('feature.yoyoking.installation', { ...installed })
++    const tools = await application.get('McpRuntimeService').listTools(edit.id, 'refresh')
++    this.toolNames = tools.map((tool) => tool.name)
++    const hostServer = this.ensureServer(installed.hostServerId, {
++      name: 'yoyoking-host',
++      type: 'inMemory',
++      isActive: true,
++      installSource: 'manual',
++      tags: ['yoyoking']
++    })
++    installed.hostServerId = hostServer.id
++    await this.revokeHost?.()
++    this.revokeHost = application.get('McpRuntimeService').registerLocalEndpoint(hostServer.id, async () => ({
++      createServer: () => this.createHostServer(),
++      close: async () => {}
++    }))
++    const skillIds: string[] = []
++    for (const name of ['yoyoking-edit', 'yoyoking-montage', 'yoyoking-captions']) {
++      const existing = (await skillService.list({})).find((skill) => skill.name === name)
++      const skill =
++        existing ?? (await skillService.installFromDirectory({ directoryPath: join(runtime, 'skills', name) }))
++      skillIds.push(skill.id)
++      if (!this.skillNames.includes(name)) this.skillNames.push(name)
++    }
++    const model = UniqueModelIdSchema.safeParse(application.get('PreferenceService').get('chat.default_model_id'))
++    if (installed.agentId && !agentService.getAgent(installed.agentId)) installed.agentId = undefined
++    if (!installed.agentId && model.success) {
++      installed.agentId = randomUUID()
++      agentService.createAgentWithId(installed.agentId, {
++        type: 'pi',
++        name: 'Yoyoking',
++        model: model.data,
++        mcps: [edit.id, hostServer.id],
++        skillIds,
++        configuration: { permission_mode: 'default', yoyoking: true },
++        instructions:
++          'You are the video editing agent in Yoyoking Studio. Discover actual tool schemas and load the yoyoking Skills. For the current Jianying project use yoyoking_current_project; it is a last-saved disk snapshot, not in-memory state. Preserve source drafts, use copy-on-write and revisions. Use returned IDs and poll export jobs to terminal states. Call yoyoking_preview_video to show an authorized source or completed export. Do not claim a rendered video or a saved draft passed native UI acceptance without real observation. Douyin calls are serial with at least five seconds between requests.'
++      })
++    }
++    await application.get('PreferenceService').set('feature.yoyoking.installation', { ...installed })
++    if (settings.douyinEnabled) await this.startDouyin()
++    logger.info('Editing runtime ready', { toolCount: this.toolNames.length, skillCount: this.skillNames.length })
++    return this.status()
++  }
++
++  async call(name: string, args: Record<string, unknown>, windowId: string): Promise<unknown> {
++    const serverId = this.installation().editServerId
++    if (!serverId || !this.toolNames.includes(name)) throw new Error('Set up the editing runtime first')
++    return application.get('McpRuntimeService').callTool({
++      serverId,
++      name,
++      args,
++      scope: `yoyoking:${windowId}`,
++      interactionContext: { windowId, topicId: `yoyoking:${windowId}`, requestId: randomUUID() }
++    })
++  }
++
++  async preview(path: string, owner: BrowserWindow): Promise<{ id: string; url: string }> {
++    if ([...this.previews.values()].filter((entry) => entry.windowId === owner.webContents.id).length >= 8)
++      throw new Error('Close an existing preview before opening another')
++    const roots = [...this.settings().mediaRoots, this.workspace()]
++    const source = await resolveVideoPath(path, roots)
++    const mimeType = videoTypes[extname(source).toLowerCase()]
++    if (!mimeType) throw new Error('Unsupported video format')
++    const { stdout } = await exec(
++      'ffprobe',
++      ['-v', 'error', '-show_entries', 'stream=codec_type', '-of', 'json', source],
++      { windowsHide: true, timeout: 30000, maxBuffer: 1024 * 1024 }
++    )
++    if (!JSON.parse(stdout).streams?.some((stream: { codec_type: string }) => stream.codec_type === 'video'))
++      throw new Error('Source has no video stream')
++    const media = application.get('MediaProtocolService')
++    const id = media.storeVideo({ path: source, roots, mimeType, access: { webContentsId: owner.webContents.id } })
++    const cleanup = () => {
++      media.remove('video', id)
++      this.previews.delete(id)
++      owner.webContents.removeListener('destroyed', cleanup)
++    }
++    this.previews.set(id, { windowId: owner.webContents.id, release: cleanup })
++    owner.webContents.once('destroyed', cleanup)
++    return { id, url: media.getUrl('video', id) }
++  }
++
++  releasePreview(id: string, owner: BrowserWindow): void {
++    if (this.previews.get(id)?.windowId !== owner.webContents.id) return
++    this.previews.get(id)?.release()
++  }
++
++  nativeEditor(): NativeEditor {
++    return this.native
++  }
++
++  async launchNative(): Promise<void> {
++    if (process.platform !== 'win32') throw new Error('Windows is required')
++    const executable = await realpath(this.settings().jianyingExecutable)
++    if (basename(executable).toLowerCase() !== 'jianyingpro.exe')
++      throw new Error('Choose the JianyingPro.exe executable')
++    const child = spawn(executable, [], {
++      cwd: dirname(executable),
++      detached: true,
++      windowsHide: false,
++      stdio: 'ignore'
++    })
++    await new Promise<void>((resolve, reject) => {
++      child.once('spawn', resolve)
++      child.once('error', reject)
++    })
++    child.unref()
++  }
++
++  currentProject(): Promise<Record<string, unknown>> {
++    return this.native.exclusive(() =>
++      this.native.currentProject({
++        userDataDirectory: application.getPath('feature.yoyoking.jianying_userdata'),
++        snapshotDirectory: application.getPath('feature.yoyoking.snapshots'),
++        draftConverter: join(this.runtime(), 'bin/jy-draftc.exe'),
++        converterRuntime: this.settings().jianyingRuntime
++      })
++    )
++  }
++
++  private createHostServer(): ProtocolServer {
++    const server = new ProtocolServer({ name: 'yoyoking-host', version: '1.0.0' })
++    server.registerTool(
++      'yoyoking_current_project',
++      {
++        description:
++          'Read the uniquely bound Jianying project last-saved snapshot. Preserves source files; requires an attached editor.',
++        inputSchema: z.object({})
++      },
++      async () => ({ content: [{ type: 'text', text: JSON.stringify(await this.currentProject()) }] })
++    )
++    server.registerTool(
++      'yoyoking_douyin_connect',
++      {
++        description: 'Start official Douyin authorization in the user browser. Credentials remain in memory.',
++        inputSchema: z.object({})
++      },
++      async () => ({ content: [{ type: 'text', text: JSON.stringify(await this.login()) }] })
++    )
++    server.registerTool(
++      'yoyoking_douyin_status',
++      { description: 'Read the local Douyin service and authorization state.', inputSchema: z.object({}) },
++      async () => ({ content: [{ type: 'text', text: JSON.stringify(this.status().douyin) }] })
++    )
++    server.registerTool(
++      'yoyoking_douyin_disconnect',
++      {
++        description: 'Revoke this application shared Douyin authorization and remove the associated tools.',
++        inputSchema: z.object({})
++      },
++      async () => ({ content: [{ type: 'text', text: JSON.stringify(await this.disconnect()) }] })
++    )
++    server.registerTool(
++      'yoyoking_preview_video',
++      {
++        description: 'Show an authorized local video in the editing workbench. Does not claim model visual inspection.',
++        inputSchema: z.object({ path: z.string() })
++      },
++      async ({ path }) => {
++        const source = await resolveVideoPath(path, [...this.settings().mediaRoots, this.workspace()])
++        application.get('IpcApiService').broadcast('yoyoking.preview.requested', { path: source })
++        return {
++          content: [
++            { type: 'text', text: JSON.stringify({ kind: 'yoyoking.video', path: source, state: 'preview_requested' }) }
++          ]
++        }
++      }
++    )
++    return server
++  }
++
++  private async startDouyin(): Promise<void> {
++    if (this.host) return
++    const directory = this.settings().douyinSdkDirectory || application.getPath('feature.yoyoking.douyin_sdk')
++    const hostModule = await import(pathToFileURL(join(this.runtime(), 'adapters/douyin-host.js')).href)
++    const oauthModule = await import(pathToFileURL(join(this.runtime(), 'adapters/douyin-oauth.js')).href)
++    this.host = hostModule.createDouyinHost(
++      {
++        sdkDirectory: directory,
++        workspaceDirectory: this.workspace(),
++        uvCommand: await getBinaryPath('uv'),
++        pythonVersion: '3.12'
++      },
++      {
++        oauthFactory: (options: Record<string, unknown>) => oauthModule.createDouyinOAuth({ ...options, auth })
++      }
++    )
++    this.host.subscribe(() => {
++      this.accountQueue = this.accountQueue
++        .then(() => this.syncDouyin())
++        .catch((error) => {
++          this.accountSyncFailed = true
++          logger.warn('Account connection could not be synchronized', error)
++        })
++      return this.accountQueue
++    })
++  }
++
++  private async syncDouyin(): Promise<void> {
++    const connection = this.host?.connection()
++    if (this.generation === (connection?.generation ?? -1) && !this.accountSyncFailed) return
++    this.accountSyncFailed = true
++    this.douyinToolNames = []
++    this.generation = connection?.generation ?? -1
++    await this.revokeDouyin?.()
++    this.revokeDouyin = undefined
++    const installed = this.installation()
++    if (!connection || this.stopping) {
++      if (installed.douyinServerId && mcpServerService.getById(installed.douyinServerId))
++        mcpServerService.update(installed.douyinServerId, { isActive: false })
++      if (installed.agentId) {
++        const agent = agentService.getAgent(installed.agentId)
++        if (agent)
++          agentService.updateAgent(installed.agentId, {
++            mcps: agent.mcps?.filter((id) => id !== installed.douyinServerId) ?? []
++          })
++        const skill = (await skillService.list({})).find((item) => item.name === 'yoyoking-douyin')
++        if (skill) skillService.toggle({ agentId: installed.agentId, skillId: skill.id, isEnabled: false })
++      }
++      this.accountSyncFailed = false
++      return
++    }
++    const server = this.ensureServer(installed.douyinServerId, {
++      name: 'yoyoking-douyin',
++      type: 'streamableHttp',
++      baseUrl: connection.url,
++      isActive: true,
++      tags: ['yoyoking', 'ephemeral-auth'],
++      timeout: 300
++    })
++    installed.douyinServerId = server.id
++    await application.get('PreferenceService').set('feature.yoyoking.installation', { ...installed })
++    this.revokeDouyin = application.get('McpRuntimeService').registerAuthenticatedTransport(server.id, connection.fetch)
++    const tools = await application.get('McpRuntimeService').listTools(server.id, 'refresh')
++    if (!tools.length) throw new Error('The authorized SDK exposed no tools')
++    this.douyinToolNames = tools.map((tool) => tool.name)
++    const skill =
++      (await skillService.list({})).find((item) => item.name === 'yoyoking-douyin') ??
++      (await skillService.installFromDirectory({ directoryPath: join(this.runtime(), 'skills/yoyoking-douyin') }))
++    if (installed.agentId) {
++      const agent = agentService.getAgent(installed.agentId)
++      if (agent) agentService.updateAgent(installed.agentId, { mcps: [...new Set([...(agent.mcps ?? []), server.id])] })
++      await skillService.toggle({ agentId: installed.agentId, skillId: skill.id, isEnabled: true })
++    }
++    if (!this.skillNames.includes(skill.name)) this.skillNames.push(skill.name)
++    this.accountSyncFailed = false
++  }
++
++  async login(): Promise<Record<string, unknown>> {
++    if (!this.settings().douyinEnabled) throw new Error('Douyin is disabled')
++    await this.startDouyin()
++    const state = await this.host.login()
++    await this.accountQueue
++    if (this.host.connection()) await this.syncDouyin()
++    const url = state.authorization_url
++    if (typeof url === 'string') {
++      const parsed = new URL(url)
++      if (parsed.protocol !== 'http:' || parsed.hostname !== '127.0.0.1')
++        throw new Error('Invalid authorization origin')
++      await shell.openExternal(url)
++    }
++    return state
++  }
++
++  async disconnect(): Promise<Record<string, unknown>> {
++    if (this.host) await this.host.logout()
++    await this.accountQueue
++    return this.host?.status() ?? { state: 'disconnected' }
++  }
++}
+diff --git a/src/main/ipc/handlers/yoyoking.ts b/src/main/ipc/handlers/yoyoking.ts
+new file mode 100644
+--- /dev/null
++++ b/src/main/ipc/handlers/yoyoking.ts
+@@ -0,0 +1,63 @@
++import { application } from '@application'
++import type { yoyokingRequestSchemas } from '@shared/ipc/schemas/yoyoking'
++import type { IpcHandlersFor } from '@shared/ipc/types'
++
++function owner(id: string | null) {
++  const window = id ? application.get('WindowManager').getWindow(id) : undefined
++  if (!window || window.isDestroyed()) throw new Error('The editing workbench requires a managed application window')
++  return window
++}
++const service = () => application.get('YoyokingService')
++
++export const yoyokingHandlers: IpcHandlersFor<typeof yoyokingRequestSchemas> = {
++  'yoyoking.status': async () => service().status(),
++  'yoyoking.configure': async (input, { senderId }) => {
++    owner(senderId)
++    await service().configure(input)
++  },
++  'yoyoking.setup': async (_input, { senderId }) => {
++    owner(senderId)
++    return service().setup()
++  },
++  'yoyoking.tool.call': async ({ name, args }, { senderId }) => {
++    owner(senderId)
++    return service().call(name, args, senderId!)
++  },
++  'yoyoking.preview.open': async ({ path }, { senderId }) => service().preview(path, owner(senderId)),
++  'yoyoking.preview.release': async ({ id }, { senderId }) => service().releasePreview(id, owner(senderId)),
++  'yoyoking.native.list': async (_input, { senderId }) => {
++    owner(senderId)
++    return service().nativeEditor().list()
++  },
++  'yoyoking.native.launch': async (_input, { senderId }) => {
++    owner(senderId)
++    await service().launchNative()
++  },
++  'yoyoking.native.attach': async (input, { senderId }) => {
++    const window = owner(senderId),
++      native = service().nativeEditor()
++    return native.exclusive(() => native.attach(window, input.hwnd, input))
++  },
++  'yoyoking.native.sync': async (input, { senderId }) => {
++    const window = owner(senderId),
++      native = service().nativeEditor()
++    return native.exclusive(() => native.sync(window, input))
++  },
++  'yoyoking.native.detach': async ({ ownerId }, { senderId }) => {
++    const window = owner(senderId),
++      native = service().nativeEditor()
++    return native.exclusive(() => native.detach(window, false, ownerId))
++  },
++  'yoyoking.native.current_project': async (_input, { senderId }) => {
++    owner(senderId)
++    return service().currentProject()
++  },
++  'yoyoking.douyin.login': async (_input, { senderId }) => {
++    owner(senderId)
++    return service().login()
++  },
++  'yoyoking.douyin.disconnect': async (_input, { senderId }) => {
++    owner(senderId)
++    return service().disconnect()
++  }
++}
+diff --git a/src/main/services/mediaProtocol/__tests__/fileVideo.test.ts b/src/main/services/mediaProtocol/__tests__/fileVideo.test.ts
+new file mode 100644
+--- /dev/null
++++ b/src/main/services/mediaProtocol/__tests__/fileVideo.test.ts
+@@ -0,0 +1,84 @@
++import { mkdtemp, mkdir, open, rm, symlink, writeFile } from 'node:fs/promises'
++import { tmpdir } from 'node:os'
++import { join } from 'node:path'
++
++import { afterEach, beforeEach, describe, expect, it } from 'vitest'
++
++import { type FileVideoEntry, resolveVideoPath, serveFileVideo } from '../fileVideo'
++
++describe('file video authorization and byte-range contract', () => {
++  let directory: string, entry: FileVideoEntry
++  beforeEach(async () => {
++    directory = await mkdtemp(join(tmpdir(), 'yoyoking-video-'))
++    const path = join(directory, 'video.mp4')
++    await writeFile(path, Buffer.from([0, 1, 2, 3, 4, 5]))
++    entry = {
++      path,
++      roots: [directory],
++      mimeType: 'video/mp4',
++      access: { webContentsId: 1 },
++      lifetime: new AbortController()
++    }
++  })
++  afterEach(async () => {
++    entry.lifetime.abort()
++    await rm(directory, { recursive: true, force: true })
++  })
++
++  it('serves exact seek ranges, suffixes, HEAD and unsatisfied ranges', async () => {
++    for (const [range, bytes, expected] of [
++      ['bytes=1-3', [1, 2, 3], 'bytes 1-3/6'],
++      ['bytes=-2', [4, 5], 'bytes 4-5/6'],
++      ['bytes=4-', [4, 5], 'bytes 4-5/6']
++    ] as const) {
++      const response = await serveFileVideo(
++        new Request('cherry-media://video/test', { headers: { Range: range } }),
++        entry
++      )
++      expect(response.status).toBe(206)
++      expect(response.headers.get('Content-Range')).toBe(expected)
++      expect([...new Uint8Array(await response.arrayBuffer())]).toEqual(bytes)
++    }
++    const head = await serveFileVideo(new Request('cherry-media://video/test', { method: 'HEAD' }), entry)
++    expect(head.headers.get('Content-Length')).toBe('6')
++    expect(await head.text()).toBe('')
++    const invalid = await serveFileVideo(
++      new Request('cherry-media://video/test', { headers: { Range: 'bytes=99-' } }),
++      entry
++    )
++    expect(invalid.status).toBe(416)
++    expect(invalid.headers.get('Content-Range')).toBe('bytes */6')
++  })
++
++  it('reads a bounded range of a sparse large file without transferring its entire content', async () => {
++    const file = await open(entry.path, 'r+')
++    await file.truncate(1024 * 1024 * 1024)
++    await file.close()
++    const response = await serveFileVideo(
++      new Request('cherry-media://video/test', { headers: { Range: 'bytes=0-5' } }),
++      entry
++    )
++    expect(response.headers.get('Content-Range')).toBe('bytes 0-5/1073741824')
++    expect([...new Uint8Array(await response.arrayBuffer())]).toEqual([0, 1, 2, 3, 4, 5])
++  })
++
++  it('rejects sibling-prefix and directory-link escapes on each request', async () => {
++    const permitted = join(directory, 'allowed')
++    const outside = join(directory, 'allowed-other')
++    await mkdir(permitted)
++    await mkdir(outside)
++    await writeFile(join(outside, 'private.mp4'), 'private')
++    await symlink(outside, join(permitted, 'link'), process.platform === 'win32' ? 'junction' : 'dir')
++    await expect(resolveVideoPath(join(outside, 'private.mp4'), [permitted])).rejects.toThrow('outside')
++    entry.roots = [permitted]
++    entry.path = join(permitted, 'link/private.mp4')
++    expect((await serveFileVideo(new Request('cherry-media://video/test'), entry)).status).toBe(404)
++  })
++
++  it('revokes new reads when the owning preview is released', async () => {
++    entry.lifetime.abort()
++    const response = await serveFileVideo(new Request('cherry-media://video/test'), entry)
++    expect(response.status).toBe(404)
++    expect(await response.text()).not.toContain('0,1,2')
++  })
++})
+diff --git a/src/main/services/mediaProtocol/fileVideo.ts b/src/main/services/mediaProtocol/fileVideo.ts
+new file mode 100644
+--- /dev/null
++++ b/src/main/services/mediaProtocol/fileVideo.ts
+@@ -0,0 +1,77 @@
++import { open, realpath, stat } from 'node:fs/promises'
++import { isAbsolute, relative, sep } from 'node:path'
++import { Readable } from 'node:stream'
++
++import parseRange from 'range-parser'
++
++export interface FileVideoEntry {
++  path: string
++  roots: string[]
++  mimeType: string
++  access: { webContentsId: number }
++  lifetime: AbortController
++}
++
++export async function resolveVideoPath(path: string, roots: string[]): Promise<string> {
++  if (!isAbsolute(path)) throw new Error('Video path must be absolute')
++  const canonical = await realpath(path)
++  for (const directory of roots) {
++    const root = await realpath(directory)
++    const child = relative(root, canonical)
++    if (child && child !== '..' && !child.startsWith(`..${sep}`) && !isAbsolute(child)) return canonical
++  }
++  throw new Error('Video is outside the permitted media roots')
++}
++
++export async function serveFileVideo(request: Request, entry: FileVideoEntry): Promise<Response> {
++  let file: Awaited<ReturnType<typeof open>> | undefined
++  try {
++    const signal = AbortSignal.any([request.signal, entry.lifetime.signal])
++    signal.throwIfAborted()
++    const source = await resolveVideoPath(entry.path, entry.roots)
++    file = await open(source, 'r')
++    const info = await file.stat({ bigint: true })
++    const checked = await resolveVideoPath(entry.path, entry.roots)
++    const current = await stat(checked, { bigint: true })
++    if (!info.isFile() || checked !== source || info.ino !== current.ino || info.dev !== current.dev)
++      throw new Error('Video changed')
++    const size = Number(info.size)
++    if (!Number.isSafeInteger(size)) throw new Error('Video is too large')
++    const headers = new Headers({
++      'Content-Type': entry.mimeType,
++      'Content-Length': String(size),
++      'Accept-Ranges': 'bytes',
++      'Cache-Control': 'no-store'
++    })
++    let start = 0,
++      end = size - 1,
++      status = 200
++    const range = request.headers.get('Range')
++    if (range && request.method === 'GET') {
++      const ranges = parseRange(size, range, { combine: true })
++      if (ranges === -1) {
++        await file.close()
++        return new Response(null, {
++          status: 416,
++          headers: { 'Content-Range': `bytes */${size}`, 'Cache-Control': 'no-store' }
++        })
++      }
++      if (Array.isArray(ranges) && ranges.type === 'bytes' && ranges.length === 1) {
++        ;({ start, end } = ranges[0])
++        status = 206
++        headers.set('Content-Range', `bytes ${start}-${end}/${size}`)
++        headers.set('Content-Length', String(end - start + 1))
++      }
++    }
++    if (request.method === 'HEAD' || size === 0) {
++      await file.close()
++      return new Response(null, { status, headers })
++    }
++    signal.throwIfAborted()
++    const stream = file.createReadStream({ start, end, autoClose: true, signal })
++    return new Response(Readable.toWeb(stream) as ReadableStream<Uint8Array>, { status, headers })
++  } catch {
++    await file?.close().catch(() => {})
++    return new Response('Video unavailable', { status: 404, headers: { 'Cache-Control': 'no-store' } })
++  }
++}
+diff --git a/src/renderer/components/yoyoking/YoyokingWorkbench.tsx b/src/renderer/components/yoyoking/YoyokingWorkbench.tsx
+new file mode 100644
+--- /dev/null
++++ b/src/renderer/components/yoyoking/YoyokingWorkbench.tsx
+@@ -0,0 +1,364 @@
++import { useCallback, useEffect, useRef, useState } from 'react'
++import { useTranslation } from 'react-i18next'
++
++import {
++  Alert,
++  Badge,
++  Button,
++  Field,
++  FieldGroup,
++  FieldLabel,
++  Input,
++  Separator,
++  Tabs,
++  TabsContent,
++  TabsList,
++  TabsTrigger,
++  Textarea
++} from '@cherrystudio/ui'
++import { useTabs } from '@renderer/hooks/tab'
++import { ipcApi, useIpcOn } from '@renderer/ipc'
++import { toast } from '@renderer/services/toast'
++import type { YoyokingSettings, YoyokingStatus } from '@shared/types/yoyoking'
++
++const settingsLabels = {
++  jianyingRuntime: 'yoyoking.jianyingRuntime',
++  jianyingExecutable: 'yoyoking.jianyingExecutable',
++  douyinSdkDirectory: 'yoyoking.douyinSdkDirectory'
++}
++
++function payload(value: unknown): Record<string, any> {
++  const result = value as { structuredContent?: Record<string, any>; content?: { type: string; text?: string }[] }
++  if (result.structuredContent) return result.structuredContent
++  const text = result.content?.find((item) => item.type === 'text')?.text
++  return text ? JSON.parse(text) : {}
++}
++
++export default function YoyokingWorkbench() {
++  const { t } = useTranslation()
++  const { openTab } = useTabs()
++  const [status, setStatus] = useState<YoyokingStatus>()
++  const [settings, setSettings] = useState<YoyokingSettings>()
++  const [busy, setBusy] = useState(false)
++  const [error, setError] = useState('')
++  const [output, setOutput] = useState<unknown>()
++  const [path, setPath] = useState('')
++  const [preview, setPreview] = useState<{ id: string; url: string }>()
++  const video = useRef<HTMLVideoElement>(null)
++  const previewId = useRef<string | undefined>(undefined)
++  const refresh = useCallback(async () => {
++    const state = await ipcApi.request('yoyoking.status')
++    setStatus(state)
++    setSettings((current) => current ?? state.settings)
++  }, [])
++  const run = useCallback(
++    async (action: () => Promise<unknown>) => {
++      setBusy(true)
++      setError('')
++      try {
++        await action()
++        await refresh()
++      } catch (failure) {
++        setError(failure instanceof Error ? failure.message : String(failure))
++      } finally {
++        setBusy(false)
++      }
++    },
++    [refresh]
++  )
++
++  useEffect(() => {
++    void refresh().catch((failure) => setError(String(failure)))
++    const timer = setInterval(() => {
++      void refresh().catch(() => {})
++    }, 2000)
++    return () => {
++      clearInterval(timer)
++    }
++  }, [refresh])
++  useEffect(
++    () => () => {
++      if (previewId.current) void ipcApi.request('yoyoking.preview.release', { id: previewId.current }).catch(() => {})
++    },
++    []
++  )
++
++  const showVideo = useCallback(async (source: string) => {
++    const next = await ipcApi.request('yoyoking.preview.open', { path: source })
++    video.current?.pause()
++    if (video.current) {
++      video.current.removeAttribute('src')
++      video.current.load()
++    }
++    const previous = previewId.current
++    previewId.current = next.id
++    setPreview(next)
++    setPath(source)
++    if (previous) await ipcApi.request('yoyoking.preview.release', { id: previous })
++  }, [])
++  useIpcOn('yoyoking.preview.requested', ({ path }) => {
++    void run(() => showVideo(path))
++  })
++
++  return (
++    <main
++      className="flex h-full min-h-0 flex-col gap-4 overflow-auto bg-background p-4"
++      data-testid="yoyoking-workbench">
++      <header className="flex flex-wrap items-center gap-2">
++        <h1 className="mr-auto font-medium">{t('yoyoking.title')}</h1>
++        <Badge variant="secondary">{status?.toolNames.length ?? 0} MCP</Badge>
++        <Button
++          disabled={busy}
++          onClick={() => {
++            void run(() => ipcApi.request('yoyoking.setup'))
++          }}>
++          {t('yoyoking.setup')}
++        </Button>
++        <Button
++          variant="outline"
++          disabled={!status?.agentId}
++          onClick={() => openTab(`/app/agents?agentId=${status?.agentId}`)}>
++          {t('yoyoking.open_agent')}
++        </Button>
++      </header>
++      {error ? <Alert type="error" description={error} /> : null}
++      {status?.editServerId && !status.agentId ? (
++        <Alert
++          action={
++            <Button variant="link" onClick={() => openTab('/settings/model')}>
++              {t('yoyoking.default_model_required')}
++            </Button>
++          }
++        />
++      ) : null}
++      <details>
++        <summary className="cursor-pointer text-sm text-muted-foreground">{t('common.settings')}</summary>
++        {settings ? (
++          <FieldGroup className="mt-3">
++            <Field>
++              <FieldLabel htmlFor="yoyoking-roots">{t('yoyoking.media_roots')}</FieldLabel>
++              <Textarea.Input
++                id="yoyoking-roots"
++                value={settings.mediaRoots.join('\n')}
++                onChange={(event) =>
++                  setSettings({ ...settings, mediaRoots: event.target.value.split('\n').filter(Boolean) })
++                }
++              />
++            </Field>
++            {(['jianyingRuntime', 'jianyingExecutable', 'douyinSdkDirectory'] as const).map((key) => (
++              <Field key={key}>
++                <FieldLabel htmlFor={`yoyoking-${key}`}>{t(settingsLabels[key])}</FieldLabel>
++                <Input
++                  id={`yoyoking-${key}`}
++                  value={settings[key]}
++                  onChange={(event) => setSettings({ ...settings, [key]: event.target.value })}
++                />
++              </Field>
++            ))}
++            <Button
++              variant="outline"
++              disabled={busy}
++              onClick={() => {
++                void run(() => ipcApi.request('yoyoking.configure', settings))
++              }}>
++              {t('common.save')}
++            </Button>
++          </FieldGroup>
++        ) : null}
++      </details>
++      <Separator />
++      <Tabs defaultValue="video" className="flex shrink-0 flex-col">
++        <TabsList>
++          <TabsTrigger value="video">{t('yoyoking.preview')}</TabsTrigger>
++          <TabsTrigger value="native">{t('yoyoking.native_editor')}</TabsTrigger>
++          <TabsTrigger value="projects">{t('yoyoking.projects')}</TabsTrigger>
++          <TabsTrigger value="douyin">{t('yoyoking.douyin')}</TabsTrigger>
++        </TabsList>
++        <TabsContent value="video" className="flex min-h-0 flex-col gap-3">
++          <Field>
++            <FieldLabel htmlFor="yoyoking-video-path">{t('yoyoking.preview')}</FieldLabel>
++            <Input id="yoyoking-video-path" value={path} onChange={(event) => setPath(event.target.value)} />
++          </Field>
++          <Button
++            variant="outline"
++            disabled={busy || !path.trim()}
++            onClick={() => {
++              void run(() => showVideo(path))
++            }}>
++            {t('common.open')}
++          </Button>
++          {preview ? (
++            <video
++              ref={video}
++              src={preview.url}
++              controls
++              preload="metadata"
++              className="min-h-48 max-h-[65vh] w-full bg-background-subtle"
++              onError={() => setError(t('yoyoking.video_error'))}
++            />
++          ) : null}
++        </TabsContent>
++        <TabsContent value="native" className="min-h-96 flex-1">
++          <NativeEditorPane run={run} setOutput={setOutput} />
++        </TabsContent>
++        <TabsContent value="projects" className="flex flex-col gap-3">
++          <div className="flex flex-wrap gap-2">
++            {['list_projects', 'list_native_projects', 'get_capabilities'].map((name) => (
++              <Button
++                key={name}
++                variant="outline"
++                disabled={busy || !status?.toolNames.includes(name)}
++                onClick={() => {
++                  void run(async () =>
++                    setOutput(payload(await ipcApi.request('yoyoking.tool.call', { name, args: {} })))
++                  )
++                }}>
++                {name === 'list_projects'
++                  ? t('yoyoking.projects')
++                  : name === 'list_native_projects'
++                    ? `${t('yoyoking.native_editor')} · ${t('yoyoking.projects')}`
++                    : 'MCP'}
++              </Button>
++            ))}
++          </div>
++          <p className="break-all text-sm text-muted-foreground">{status?.workspace}</p>
++        </TabsContent>
++        <TabsContent value="douyin" className="flex flex-col gap-3">
++          <Badge variant="secondary">{String(status?.douyin.state ?? 'disconnected')}</Badge>
++          <p className="text-sm text-muted-foreground">{String(status?.douyin.message ?? '')}</p>
++          <div className="flex gap-2">
++            <Button
++              disabled={busy}
++              onClick={() => {
++                void run(() => ipcApi.request('yoyoking.douyin.login'))
++              }}>
++              {t('yoyoking.login')}
++            </Button>
++            <Button
++              variant="outline"
++              disabled={busy}
++              onClick={() => {
++                void run(() => ipcApi.request('yoyoking.douyin.disconnect'))
++              }}>
++              {t('yoyoking.disconnect')}
++            </Button>
++          </div>
++        </TabsContent>
++      </Tabs>
++      {output ? (
++        <pre className="max-h-64 shrink-0 overflow-auto rounded-md bg-background-subtle p-3 text-xs" aria-live="polite">
++          {JSON.stringify(output, null, 2)}
++        </pre>
++      ) : null}
++    </main>
++  )
++}
++
++function NativeEditorPane({
++  run,
++  setOutput
++}: {
++  run: (action: () => Promise<unknown>) => Promise<void>
++  setOutput: (value: unknown) => void
++}) {
++  const { t } = useTranslation()
++  const area = useRef<HTMLDivElement>(null)
++  const ownerId = useRef(crypto.randomUUID())
++  const attached = useRef(false)
++  const [windows, setWindows] = useState<Record<string, unknown>[]>([])
++  const [selected, setSelected] = useState<string>('')
++  const bounds = useCallback(() => {
++    const rect = area.current?.getBoundingClientRect()
++    const x = Math.max(0, Math.ceil(rect?.left ?? 0)),
++      y = Math.max(0, Math.ceil(rect?.top ?? 0))
++    const width = Math.floor(Math.min(rect?.right ?? 0, window.innerWidth) - x)
++    const height = Math.floor(Math.min(rect?.bottom ?? 0, window.innerHeight) - y)
++    const visible = width >= 100 && height >= 100 && document.visibilityState === 'visible'
++    return {
++      ownerId: ownerId.current,
++      x: visible ? x : 0,
++      y: visible ? y : 0,
++      width: visible ? width : 100,
++      height: visible ? height : 100,
++      viewportWidth: window.innerWidth,
++      viewportHeight: window.innerHeight,
++      visible
++    }
++  }, [])
++  useEffect(() => {
++    const controllerId = ownerId.current
++    const timer = setInterval(() => {
++      if (attached.current)
++        void ipcApi.request('yoyoking.native.sync', bounds()).catch((error) => {
++          attached.current = false
++          toast.error(String(error))
++        })
++    }, 750)
++    return () => {
++      clearInterval(timer)
++      if (attached.current) void ipcApi.request('yoyoking.native.detach', { ownerId: controllerId }).catch(() => {})
++    }
++  }, [bounds])
++  return (
++    <section className="flex h-full min-h-96 flex-col gap-3">
++      <div className="flex flex-wrap gap-2">
++        <Button
++          variant="outline"
++          onClick={() => {
++            void run(async () => setWindows(await ipcApi.request('yoyoking.native.list')))
++          }}>
++          {t('common.refresh')}
++        </Button>
++        <Button
++          variant="outline"
++          onClick={() => {
++            void run(() => ipcApi.request('yoyoking.native.launch'))
++          }}>
++          {t('common.open')}
++        </Button>
++        {windows.map((item) => (
++          <Button
++            key={String(item.hwnd)}
++            variant={selected === String(item.hwnd) ? 'default' : 'outline'}
++            onClick={() => setSelected(String(item.hwnd))}>
++            {String(item.title)} · PID {String(item.pid)} · HWND {String(item.hwnd)}
++          </Button>
++        ))}
++        <Button
++          disabled={!selected}
++          onClick={() => {
++            void run(async () => {
++              const state = await ipcApi.request('yoyoking.native.attach', { ...bounds(), hwnd: Number(selected) })
++              attached.current = true
++              setOutput(state)
++            })
++          }}>
++          {t('yoyoking.attach')}
++        </Button>
++        <Button
++          variant="outline"
++          onClick={() => {
++            void run(async () => {
++              const state = await ipcApi.request('yoyoking.native.detach', { ownerId: ownerId.current })
++              attached.current = false
++              setOutput(state)
++            })
++          }}>
++          {t('yoyoking.detach')}
++        </Button>
++        <Button
++          variant="outline"
++          onClick={() => {
++            void run(async () => setOutput(await ipcApi.request('yoyoking.native.current_project')))
++          }}>
++          {t('yoyoking.current_project')}
++        </Button>
++      </div>
++      <div
++        ref={area}
++        className="min-h-72 flex-1 rounded-md border border-border bg-background-subtle"
++        data-testid="yoyoking-native-viewport"
++      />
++    </section>
++  )
++}
+diff --git a/src/renderer/routes/app/yoyoking.tsx b/src/renderer/routes/app/yoyoking.tsx
+new file mode 100644
+--- /dev/null
++++ b/src/renderer/routes/app/yoyoking.tsx
+@@ -0,0 +1,5 @@
++import { createFileRoute } from '@tanstack/react-router'
++
++import YoyokingWorkbench from '@renderer/components/yoyoking/YoyokingWorkbench'
++
++export const Route = createFileRoute('/app/yoyoking')({ component: YoyokingWorkbench })
+diff --git a/src/shared/ipc/schemas/yoyoking.ts b/src/shared/ipc/schemas/yoyoking.ts
+new file mode 100644
+--- /dev/null
++++ b/src/shared/ipc/schemas/yoyoking.ts
+@@ -0,0 +1,32 @@
++import * as z from 'zod'
++
++import { NativeViewportSchema, YoyokingSettingsSchema, type YoyokingStatus } from '@shared/types/yoyoking'
++
++import { defineRoute } from '../define'
++
++const object = z.record(z.string(), z.unknown())
++export const yoyokingRequestSchemas = {
++  'yoyoking.status': defineRoute({ input: z.void(), output: z.custom<YoyokingStatus>() }),
++  'yoyoking.configure': defineRoute({ input: YoyokingSettingsSchema, output: z.void() }),
++  'yoyoking.setup': defineRoute({ input: z.void(), output: z.custom<YoyokingStatus>() }),
++  'yoyoking.tool.call': defineRoute({
++    input: z.object({ name: z.string().min(1), args: object.default({}) }),
++    output: z.unknown()
++  }),
++  'yoyoking.preview.open': defineRoute({
++    input: z.object({ path: z.string().min(1) }),
++    output: z.object({ id: z.string(), url: z.string() })
++  }),
++  'yoyoking.preview.release': defineRoute({ input: z.object({ id: z.string() }), output: z.void() }),
++  'yoyoking.native.list': defineRoute({ input: z.void(), output: z.array(object) }),
++  'yoyoking.native.launch': defineRoute({ input: z.void(), output: z.void() }),
++  'yoyoking.native.attach': defineRoute({
++    input: NativeViewportSchema.extend({ hwnd: z.number().int().positive() }),
++    output: object
++  }),
++  'yoyoking.native.sync': defineRoute({ input: NativeViewportSchema, output: object }),
++  'yoyoking.native.detach': defineRoute({ input: z.object({ ownerId: z.uuid() }), output: object }),
++  'yoyoking.native.current_project': defineRoute({ input: z.void(), output: object }),
++  'yoyoking.douyin.login': defineRoute({ input: z.void(), output: object }),
++  'yoyoking.douyin.disconnect': defineRoute({ input: z.void(), output: object })
++}
+diff --git a/src/shared/types/yoyoking.ts b/src/shared/types/yoyoking.ts
+new file mode 100644
+--- /dev/null
++++ b/src/shared/types/yoyoking.ts
+@@ -0,0 +1,32 @@
++import * as z from 'zod'
++
++export const YoyokingSettingsSchema = z.object({
++  mediaRoots: z.array(z.string().min(1)).max(30).default([]),
++  jianyingExecutable: z.string().default(''),
++  jianyingRuntime: z.string().default(''),
++  douyinSdkDirectory: z.string().default(''),
++  douyinEnabled: z.boolean().default(true)
++})
++export type YoyokingSettings = z.infer<typeof YoyokingSettingsSchema>
++
++export const NativeViewportSchema = z.object({
++  ownerId: z.uuid(),
++  x: z.number().int().min(0).max(10000),
++  y: z.number().int().min(0).max(10000),
++  width: z.number().int().min(100).max(10000),
++  height: z.number().int().min(100).max(10000),
++  viewportWidth: z.number().int().min(100).max(10000),
++  viewportHeight: z.number().int().min(100).max(10000),
++  visible: z.boolean()
++})
++export type NativeViewport = z.infer<typeof NativeViewportSchema>
++
++export interface YoyokingStatus {
++  settings: YoyokingSettings
++  workspace: string
++  editServerId: string | null
++  agentId: string | null
++  toolNames: string[]
++  skillNames: string[]
++  douyin: Record<string, unknown>
++}

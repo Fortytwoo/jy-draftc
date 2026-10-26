@@ -1,0 +1,40 @@
+# A separate preset; existing presets and sessions keep their own composition.
+- insert:
+    - id: yoyoking-visualization
+      name: '@local/dsh-yoyoking'
+      inject: [profileContext]
+      config:
+        hostServicesOnly: true
+        visualizationOnly: false
+        workspaceDirectory: !!js process.env.YOYOKING_WORKSPACE || (ctx.profileContext.dir + '/yoyoking-data')
+        mediaRoots: !!js JSON.parse(process.env.YOYOKING_MEDIA_ROOTS || JSON.stringify([process.cwd()]))
+        ffprobe: !!js process.env.YOYOKING_FFPROBE || 'ffprobe'
+        douyinEnabled: !!js process.env.YOYOKING_DOUYIN_ENABLED !== '0'
+        douyinServerUrl: !!js process.env.YOYOKING_DOUYIN_URL || ''
+    - id: preset-yoyoking
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: yoyoking
+        name: yoyoking
+        description: 可组合的剪映剪辑、原生导出和可选抖音数据分析与受控下载
+        order: 20
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: 你是 yoyoking 剪辑助手。使用剪辑功能工具和对应 Skill 组合完成用户的剪辑需求，按实际素材与工具回执交付结果。
+              complete: true
+              includeRuntimeContext: true
+          - id: yoyoking
+            name: '@local/dsh-yoyoking'
+            inject: [profileContext]
+            config:
+              workspaceDirectory: !!js process.env.YOYOKING_WORKSPACE || (ctx.profileContext.dir + '/yoyoking-data')
+              mediaRoots: !!js JSON.parse(process.env.YOYOKING_MEDIA_ROOTS || JSON.stringify([process.cwd()]))
+              nativeExecutable: !!js process.env.YOYOKING_NATIVE_EXE || ''
+              jyInstallDirectory: !!js process.env.YOYOKING_JY_INSTALL_DIR || ''
+              douyinEnabled: !!js process.env.YOYOKING_DOUYIN_ENABLED !== '0'
+              douyinServerUrl: !!js process.env.YOYOKING_DOUYIN_URL || ''
+              douyinServerName: !!js process.env.YOYOKING_DOUYIN_NAMESPACE || 'yoyoking_douyin'
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'

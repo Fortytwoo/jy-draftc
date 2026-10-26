@@ -1,0 +1,1055 @@
+{
+  "backend": "douyin-creator-mcp",
+  "version": "0.17.2",
+  "tools": [
+    {
+      "name": "douyin_creator_get_work_list",
+      "description": "获取当前抖音创作者账号的一页内容列表、作品指标和下一页游标。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "scene": {
+            "default": "star_atlas",
+            "description": "内容列表场景，默认 star_atlas。",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "status": {
+            "default": 0,
+            "description": "内容状态筛选；抓包中的全部内容值为 0。",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "count": {
+            "default": 12,
+            "description": "单页返回数量，默认 12，最大 50。",
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "max_cursor": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "分页游标；首屏可省略，后续页传上一页返回的 max_cursor。"
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_creator_export_work_list",
+      "description": "导出当前账号所有作品列表到 Excel 文件。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "scene": {
+            "default": "star_atlas",
+            "description": "内容列表场景，默认 star_atlas。",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "status": {
+            "default": 0,
+            "description": "内容状态筛选；抓包中的全部内容值为 0。",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "受控目录内的 .xlsx 文件名；不接受目录或覆盖已有文件。"
+          }
+        },
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_creator_download_content",
+      "description": "按作品 ID 下载当前账号的视频到服务端受控目录，不暴露临时媒体 URL。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "item_id": {
+            "description": "要下载的作品 ID。",
+            "pattern": "^\\d+$",
+            "type": "string"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "可选文件名，仅允许当前目录下的 .mp4 文件名；默认使用作品 ID。"
+          },
+          "overwrite": {
+            "default": false,
+            "description": "目标文件存在时是否覆盖；默认不覆盖。",
+            "type": "boolean"
+          },
+          "max_size_mb": {
+            "default": 512,
+            "description": "最大允许下载体积（MB），默认 512。",
+            "maximum": 2048,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "item_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_creator_get_item_metrics_trend",
+      "description": "获取作品单指标的增量或累计趋势摘要，可选返回完整序列。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "item_id": {
+            "description": "作品 ID。",
+            "pattern": "^\\d+$",
+            "type": "string"
+          },
+          "metric": {
+            "default": "view_count",
+            "description": "要分析的单个指标。",
+            "enum": [
+              "view_count",
+              "subscribe_count",
+              "unsubscribe_count",
+              "fan_view_proportion",
+              "like_count",
+              "comment_count",
+              "share_count",
+              "favorite_count",
+              "danmaku_count",
+              "completion_rate",
+              "bounce_rate_2s",
+              "subscribe_rate",
+              "unsubscribe_rate",
+              "dislike_count",
+              "dislike_rate"
+            ],
+            "type": "string"
+          },
+          "mode": {
+            "default": "cumulative",
+            "description": "incremental 为增量，cumulative 为累计值。",
+            "enum": [
+              "incremental",
+              "cumulative"
+            ],
+            "type": "string"
+          },
+          "granularity": {
+            "default": "day",
+            "description": "day 为按日，hour 为按小时。",
+            "enum": [
+              "day",
+              "hour"
+            ],
+            "type": "string"
+          },
+          "include_series": {
+            "default": false,
+            "description": "是否返回完整时间序列；默认只返回统计摘要。",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "item_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_creator_get_item_diagnosis",
+      "description": "获取作品指标诊断、优化建议和同阶段作品基准。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "item_id": {
+            "description": "作品 ID。",
+            "pattern": "^\\d+$",
+            "type": "string"
+          },
+          "selected_metric_count": {
+            "default": 2,
+            "description": "重点诊断指标数量，默认 2，最大 10。",
+            "maximum": 10,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "item_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_creator_get_item_play_sources",
+      "description": "获取作品播放来源分布和历史变化。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "item_id": {
+            "description": "作品 ID。",
+            "pattern": "^\\d+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_creator_get_item_search_keywords",
+      "description": "获取作品搜索入口词和看后搜灵感词。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "item_id": {
+            "description": "作品 ID。",
+            "pattern": "^\\d+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_creator_get_item_audience_portrait",
+      "description": "获取作品观众的人口属性、活跃度和新老用户画像。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "item_id": {
+            "description": "作品 ID。",
+            "pattern": "^\\d+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_creator_get_item_audience_preferences",
+      "description": "获取作品观众偏好的作者、话题、搜索词和人群分层。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "item_id": {
+            "description": "作品 ID。",
+            "pattern": "^\\d+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_web_get_user_profile",
+      "description": "获取一个公开抖音用户的资料、认证和核心计数。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "sec_user_id": {
+            "description": "抖音 Web 用户 sec_user_id。",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "sec_user_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_web_get_user_works",
+      "description": "获取一个公开用户的一页作品和下一页游标，不自动拉全量。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "sec_user_id": {
+            "description": "抖音 Web 用户 sec_user_id。",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "max_cursor": {
+            "default": 0,
+            "description": "分页游标；首屏为 0，后续传上一页 max_cursor。",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sec_user_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_web_get_related_works",
+      "description": "获取公开作品的相关推荐，可按 max_pages 有界串行聚合并去重。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "item_id": {
+            "description": "作为相关推荐起点的作品 ID。",
+            "pattern": "^\\d+$",
+            "type": "string"
+          },
+          "exclude_item_ids": {
+            "default": [],
+            "description": "需要排除的作品 ID，最多 100 个。",
+            "items": {
+              "pattern": "^\\d+$",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "type": "array"
+          },
+          "max_pages": {
+            "default": 1,
+            "description": "最多串行获取的页数。",
+            "maximum": 5,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "item_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_web_search_user_works",
+      "description": "在一个公开用户主页内搜索作品，可按 max_pages 有界串行聚合并去重。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "sec_user_id": {
+            "description": "公开用户的 sec_user_id。",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "keyword": {
+            "description": "主页作品关键词。",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "description": "首个结果偏移量。",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "max_pages": {
+            "default": 1,
+            "description": "最多串行获取的页数。",
+            "maximum": 5,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sec_user_id",
+          "keyword"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_web_get_mix_works",
+      "description": "获取公开合集作品，可按 max_pages 有界串行聚合并去重。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "mix_id": {
+            "description": "公开合集 ID。",
+            "pattern": "^\\d+$",
+            "type": "string"
+          },
+          "cursor": {
+            "default": 0,
+            "description": "首个分页游标。",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "max_pages": {
+            "default": 1,
+            "description": "最多串行获取的页数。",
+            "maximum": 5,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "mix_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_web_suggest_keywords",
+      "description": "获取公开搜索关键词建议。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "description": "待补全的搜索词。",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "count": {
+            "default": 8,
+            "description": "建议词数量，最大 10。",
+            "maximum": 10,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_web_get_user_liked_works",
+      "description": "获取用户公开可见的喜欢作品，可按 max_pages 有界串行聚合并去重。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "sec_user_id": {
+            "description": "公开用户的 sec_user_id。",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "max_cursor": {
+            "default": 0,
+            "description": "首个分页游标。",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "max_pages": {
+            "default": 1,
+            "description": "最多串行获取的页数。",
+            "maximum": 5,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sec_user_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_web_get_user_following",
+      "description": "获取用户公开可见的关注列表，可按 max_pages 有界串行聚合并去重。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "sec_user_id": {
+            "description": "公开用户的 sec_user_id。",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "description": "首个结果偏移量。",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "max_time": {
+            "default": 0,
+            "description": "时间分页游标；首屏为 0，后续传上一页 next_max_time。",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "max_pages": {
+            "default": 1,
+            "description": "最多串行获取的页数。",
+            "maximum": 5,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sec_user_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_web_get_user_followers",
+      "description": "获取用户公开可见的粉丝列表，可按 max_pages 有界串行聚合并去重。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "sec_user_id": {
+            "description": "公开用户的 sec_user_id。",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "description": "首个结果偏移量。",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "max_time": {
+            "default": 0,
+            "description": "时间分页游标；首屏为 0，后续传上一页 next_max_time。",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "max_pages": {
+            "default": 1,
+            "description": "最多串行获取的页数。",
+            "maximum": 5,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sec_user_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_web_get_work_detail",
+      "description": "获取一个公开作品的作者、话题、音乐、互动与媒体摘要。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "item_id": {
+            "description": "作品 ID。",
+            "pattern": "^\\d+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_web_search_content",
+      "description": "按排序、发布时间、时长、范围和内容形式搜索一页公开作品。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "keyword": {
+            "description": "搜索关键词。",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "sort": {
+            "default": "relevance",
+            "description": "排序方式。",
+            "enum": [
+              "relevance",
+              "most_liked",
+              "latest"
+            ],
+            "type": "string"
+          },
+          "published_within": {
+            "default": "any",
+            "description": "发布时间范围。",
+            "enum": [
+              "any",
+              "day",
+              "week",
+              "half_year"
+            ],
+            "type": "string"
+          },
+          "duration": {
+            "default": "any",
+            "description": "视频时长范围。",
+            "enum": [
+              "any",
+              "under_1m",
+              "1_to_5m",
+              "over_5m"
+            ],
+            "type": "string"
+          },
+          "scope": {
+            "default": "any",
+            "description": "搜索范围。",
+            "enum": [
+              "any",
+              "watched",
+              "unwatched",
+              "following"
+            ],
+            "type": "string"
+          },
+          "content_type": {
+            "default": "any",
+            "description": "内容形式。",
+            "enum": [
+              "any",
+              "video",
+              "image_text"
+            ],
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "description": "结果偏移量。",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "search_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "翻页所需的搜索会话标识；首屏省略，后续页传上一页返回值。"
+          }
+        },
+        "required": [
+          "keyword"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_web_search_users",
+      "description": "按粉丝数与账号类型筛选搜索一页公开用户。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "keyword": {
+            "description": "搜索关键词。",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "description": "结果偏移量。",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "count": {
+            "default": 25,
+            "description": "单页数量，最大 50。",
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "follower_range": {
+            "default": "any",
+            "description": "粉丝数范围。",
+            "enum": [
+              "any",
+              "under_1k",
+              "1k_to_10k",
+              "10k_to_100k",
+              "100k_to_1m",
+              "over_1m"
+            ],
+            "type": "string"
+          },
+          "account_type": {
+            "default": "any",
+            "description": "账号认证类型。",
+            "enum": [
+              "any",
+              "common",
+              "enterprise",
+              "personal_verified"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "keyword"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_web_search_live",
+      "description": "搜索一页直播间和主播摘要，不建立 WebSocket。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "keyword": {
+            "description": "搜索关键词。",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "description": "结果偏移量。",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "count": {
+            "default": 25,
+            "description": "单页数量，最大 50。",
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "keyword"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_web_get_comments",
+      "description": "获取一个作品的一页一级评论、用户、互动和附件摘要。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "item_id": {
+            "description": "作品 ID。",
+            "pattern": "^\\d+$",
+            "type": "string"
+          },
+          "cursor": {
+            "default": 0,
+            "description": "一级评论分页游标。",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "count": {
+            "default": 5,
+            "description": "单页数量，最大 50。",
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "item_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "douyin_web_get_comment_replies",
+      "description": "获取一条一级评论的一页二级回复及回复关系。",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "item_id": {
+            "description": "作品 ID。",
+            "pattern": "^\\d+$",
+            "type": "string"
+          },
+          "comment_id": {
+            "description": "一级评论 ID。",
+            "pattern": "^\\d+$",
+            "type": "string"
+          },
+          "cursor": {
+            "default": 0,
+            "description": "二级评论分页游标。",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "count": {
+            "default": 3,
+            "description": "单页数量，最大 50。",
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "item_id",
+          "comment_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    }
+  ]
+}

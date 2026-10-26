@@ -1,0 +1,7 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<title>剪映窗口承载 · 独立 POC</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#18191c;color:#e6e7ec;font:14px 'Microsoft YaHei',sans-serif}header{height:60px;padding:16px 24px;border-bottom:1px solid #383a42;display:flex;align-items:center;justify-content:space-between}strong{font-size:17px}aside{width:308px;padding:24px}h2{font-size:16px}p{line-height:1.8;color:#b3b6c4}.tag{font-size:12px;color:#9bddc7;border:1px solid #356353;padding:5px 9px;border-radius:5px}button{padding:8px 12px;border:1px solid #555967;border-radius:6px;background:#30343e;color:white;cursor:pointer}#log{font-family:Consolas,monospace;font-size:12px;white-space:pre-wrap;line-height:1.8;color:#a8c4ff}#surface{position:absolute;left:320px;top:60px;right:12px;bottom:12px;border:1px dashed #555a69;display:grid;place-items:center;color:#8e94a5}
+</style><header><strong>剪映 · 独立 POC</strong><span class="tag" id="mode">窗口承载技术验证</span><button id="checkpoint" hidden>记录当前画面</button><button id="close">恢复剪映并结束</button></header>
+<aside><h2>真实剪映窗口</h2><p>右侧承载本机剪映窗口。此独立测试不连接现有 DeepSeek Harness 会话。</p><h2 id="steps-title">本轮自动检查</h2><p id="steps">窗口承载 → 调整大小 → 恢复原窗口</p><h2 id="input-title">剪辑操作待验证</h2><p id="input-info">桌面操作通道不可用。本轮不会执行分割、字幕修改或删除片段。</p><p id="capture-status" role="status"></p><div id="log"></div></aside><div id="surface">等待剪映窗口承载</div><script src="renderer.js"></script></html>

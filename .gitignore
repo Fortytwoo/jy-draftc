@@ -2,3 +2,10 @@ build/
 dist/
 .env
 *.user
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.jy-edit-workspace/
+/cherry-studio/

@@ -3,6 +3,18 @@
 `jy-draftc` 是一个用于处理剪映 Windows 端草稿的命令行工具。
 目前已支持功能：草稿内容加解密、草稿结构版本升降级、草稿无头导出。
 
+## Cherry Studio 桌面底座
+
+新增基于固定版本 Cherry Studio 的 Yoyoking Studio 开发版，接入剪辑 MCP/Skill、视频预览、剪映窗口与当前工程读取、应用内托管的抖音账号服务。查看 [桌面源码与运行](desktop/README.md)、[迁移方案](docs/cherry-studio-integration-plan.md) 和 [实施状态](desktop/STATUS.md)。已有构建可运行 `scripts\start-yoyoking.cmd`。
+
+桌面源码位于可重建的 `cherry-studio/` checkout；本仓库通过固定上游提交和源码补丁保存集成增量。当前项目的后端、原生工具及未提交改动仍保留。开发版验证、真实账号/剪映交互验收与 Windows 发行包分别记录。
+
+## MCP 剪辑工具
+
+`jy-edit-mcp` 0.4.0 提供 71 个独立工具，覆盖基础剪辑、字体花字、动画特效、滤镜、蒙版、色度抠图、音效、本地模板换料、原生草稿分割/曲线变速/逐句字幕/同轨波纹删除、副本打开准备、操作回执查询、草稿转换和原生导出，供 Skill 组合完成剪辑。查看 [安装与调用说明](docs/jy-edit-mcp.md) 和 [Windows MCP 配置示例](examples/jy-edit-mcp.windows.json)。
+
+[yoyoking 插件](yoyoking/README.md) 将这些工具与剪辑、混剪、字幕 3 个 Skill 接入 DeepSeek Harness，提供独立 `yoyoking` 预设和可安装的插件包。`0.7.1` 默认随 Harness 自动启动本机 DouyinCreatorSDK，侧栏“抖音账号”直接发起官方登录，无须手动启动服务或填写连接参数。同一 Host 的 yoyoking 会话共享登录，关闭聊天不停止服务，Host 退出时清理进程与内存登录态；授权后增加 24 个抖音数据/下载/导出工具及 1 个 Skill。SDK 与剪辑环境独立，不打包登录态，也不增加发布功能。
+
 ---
 
 ## 适用的版本

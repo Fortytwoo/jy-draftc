@@ -1,0 +1,19 @@
+{
+  "upstream": "de8d659dbe23753fe62e86330483c10c88007566",
+  "patchSha256": "306ab1c027fd962e2a5c9ab7c8d509bbc97a1f0ac32971076ad07e671c4c7a23",
+  "newFiles": [
+    ".agents/notes/proposed/architecture/2026-10-26-yoyoking-desktop-integration.i18n.yaml",
+    ".agents/notes/proposed/architecture/2026-10-26-yoyoking-desktop-integration.md",
+    ".agents/notes/proposed/architecture/2026-10-26-yoyoking-desktop-integration.zh.md",
+    "src/main/features/yoyoking/NativeEditor.ts",
+    "src/main/features/yoyoking/README.md",
+    "src/main/features/yoyoking/YoyokingService.ts",
+    "src/main/ipc/handlers/yoyoking.ts",
+    "src/main/services/mediaProtocol/__tests__/fileVideo.test.ts",
+    "src/main/services/mediaProtocol/fileVideo.ts",
+    "src/renderer/components/yoyoking/YoyokingWorkbench.tsx",
+    "src/renderer/routes/app/yoyoking.tsx",
+    "src/shared/ipc/schemas/yoyoking.ts",
+    "src/shared/types/yoyoking.ts"
+  ]
+}

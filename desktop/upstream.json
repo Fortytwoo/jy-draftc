@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/CherryHQ/cherry-studio.git",
+  "commit": "de8d659dbe23753fe62e86330483c10c88007566",
+  "version": "2.1.8",
+  "directory": "cherry-studio",
+  "patch": "desktop/cherry-studio.patch"
+}

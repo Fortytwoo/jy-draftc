@@ -1,0 +1,6 @@
+# Preserve the source overlay bytes used by source-receipt.json.
+desktop/cherry-studio.patch -text -whitespace
+
+# Runtime adapter rewrites use LF-delimited source strings on every platform.
+*.js text eol=lf
+*.mjs text eol=lf

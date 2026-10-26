@@ -1,0 +1,83 @@
+{
+  "status": "development_implementation_verified_release_and_real_accounts_pending",
+  "date": "2026-10-26",
+  "upstream": "de8d659dbe23753fe62e86330483c10c88007566",
+  "sourcePatchSha256": "306ab1c027fd962e2a5c9ab7c8d509bbc97a1f0ac32971076ad07e671c4c7a23",
+  "checks": {
+    "actualElectron": true,
+    "editingToolCount": 71,
+    "hostToolNames": [
+      "yoyoking_current_project",
+      "yoyoking_douyin_connect",
+      "yoyoking_douyin_status",
+      "yoyoking_douyin_disconnect",
+      "yoyoking_preview_video"
+    ],
+    "installedEditingSkills": [
+      "yoyoking-edit",
+      "yoyoking-montage",
+      "yoyoking-captions"
+    ],
+    "mainTestsPassed": 83,
+    "navigationTestsPassed": 41,
+    "nativeReaderTestsPassed": 8,
+    "realWin32HelperRegressionPassed": true,
+    "nativeFixtureAttachedToActualElectron": true,
+    "crossPaneIsolation": true,
+    "nativeRestoration": true,
+    "managedSdkRunning": true,
+    "oauthMetadataRead": true,
+    "realAccountAuthorized": false,
+    "output": {
+      "ok": true,
+      "passed": true,
+      "decoded": true,
+      "media": {
+        "path": "E:\\CodexBuild\\jy-draftc-cherry\\acceptance-release-check\\profile\\userData\\Data\\Yoyoking\\jobs\\fd76ad0d8f9843d3b997abba835a4300\\output.mp4",
+        "kind": "video",
+        "duration_us": 3018005,
+        "width": 320,
+        "height": 180,
+        "has_audio": true,
+        "rotation": 0,
+        "frame_rate": "30/1",
+        "video_codec": "h264",
+        "audio_codec": "aac",
+        "sha256": null
+      },
+      "sha256": "8c9473564c6246f14cf64030e43b9573babd6e9a73a419627573d88370c746e1"
+    },
+    "playback": {
+      "currentTime": 2.054864,
+      "duration": 3.018005,
+      "paused": false,
+      "width": 320,
+      "height": 180
+    },
+    "rendererErrors": [],
+    "typecheckNode": true,
+    "typecheckRenderer": true,
+    "appBuild": true,
+    "utilityProcessBuild": true,
+    "i18n": true,
+    "specPairing": true,
+    "specFormat": true,
+    "cleanUpstreamPatchApplied": true
+  },
+  "evidenceDirectory": "E:/CodexBuild/jy-draftc-cherry/acceptance-release-check",
+  "knownLimitations": [
+    "Native rendering of the single-video-track fixture fails at ProjectService::init; audio/video fixture succeeds.",
+    "Windows packaging requires administrator installation of Microsoft.VisualStudio.Component.VC.ATL."
+  ],
+  "pendingAcceptance": [
+    "real model conversation and Skill execution",
+    "real Jianying project open/playback/Chinese input/save/reopen/cross-screen",
+    "official Douyin user authorization and bounded business/download/Excel checks",
+    "Windows packaged artifact execution and signing status"
+  ],
+  "preserved": {
+    "parentRepositoryUncommittedChanges": true,
+    "existingDesktopProfiles": true,
+    "originalJianyingProjects": true
+  }
+}

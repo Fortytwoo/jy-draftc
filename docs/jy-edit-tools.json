@@ -1,0 +1,4566 @@
+{
+  "server": "jy-edit",
+  "version": "0.4.0",
+  "time_unit": "seconds",
+  "tools": [
+    {
+      "name": "get_capabilities",
+      "description": "Inspect tools/backends. check_native=true runs jy-draftc self-check; existence alone is not native acceptance.",
+      "inputSchema": {
+        "properties": {
+          "check_native": {
+            "default": false,
+            "title": "Check Native",
+            "type": "boolean"
+          }
+        },
+        "title": "get_capabilitiesArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "probe_media",
+      "description": "Probe a local source (absolute path or relative to the first media root), including SHA-256 and streams.",
+      "inputSchema": {
+        "properties": {
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "probe_mediaArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "list_native_projects",
+      "description": "List real Jianying desktop drafts and exact local:// refs. Separate from list_projects (service-created projects).",
+      "inputSchema": {
+        "properties": {},
+        "title": "list_native_projectsArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_native_draft",
+      "description": "Read an existing native project's saved main timeline, including encrypted drafts. Returns exact segment IDs, integer-microsecond ranges and content hash; does not edit or save.",
+      "inputSchema": {
+        "properties": {
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 200,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ref"
+        ],
+        "title": "get_native_draftArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_native_clip",
+      "description": "Inspect one saved native segment, its raw settings, referenced materials (including text/curves/effects), missing references and content hash. Times are integer microseconds; no media files are opened.",
+      "inputSchema": {
+        "properties": {
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "seg_id": {
+            "title": "Seg Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ref",
+          "seg_id"
+        ],
+        "title": "get_native_clipArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "list_native_operations",
+      "description": "List native edit receipts newest-first, including failed/uncertain copies. A started receipt is not proof a worker is alive. Query before retrying a timed-out edit.",
+      "inputSchema": {
+        "properties": {
+          "offset": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 200,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "list_native_operationsArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_native_operation",
+      "description": "Read a durable native edit receipt, completed command count, output_ref, verification status and original native errors. Does not retry, delete, open or repair anything.",
+      "inputSchema": {
+        "properties": {
+          "operation_id": {
+            "title": "Operation Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation_id"
+        ],
+        "title": "get_native_operationArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "remove_native_clip",
+      "description": "Remove a saved native segment in a NEW project copy. ripple=true shifts only subsequent clips on the same track by the removed duration; other tracks are not synchronized. Verifies all surviving segments/materials; magnetic main-track normalizations that disagree with saved ranges are rejected. Failure retains an unverified copy and receipt, never changes the source.",
+      "inputSchema": {
+        "properties": {
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "seg_id": {
+            "title": "Seg Id",
+            "type": "string"
+          },
+          "ripple": {
+            "default": false,
+            "title": "Ripple",
+            "type": "boolean"
+          },
+          "expected_content_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Content Sha256"
+          }
+        },
+        "required": [
+          "ref",
+          "seg_id"
+        ],
+        "title": "remove_native_clipArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_native_clip_speed",
+      "description": "Set native video speed in a NEW project copy. Choose exactly one: constant speed, named curve or custom points (normalized source x=0..1, speed multiplier y=0.01..100, strictly ordered endpoints 0 and 1). Keeps source range/start; no ripple. Overlaps or unrelated changes are rejected by readback. Curve serialization is not rendered-motion acceptance.",
+      "inputSchema": {
+        "$defs": {
+          "CurvePoint": {
+            "additionalProperties": false,
+            "properties": {
+              "x": {
+                "maximum": 1,
+                "minimum": 0,
+                "title": "X",
+                "type": "number"
+              },
+              "y": {
+                "maximum": 100,
+                "minimum": 0.01,
+                "title": "Y",
+                "type": "number"
+              }
+            },
+            "required": [
+              "x",
+              "y"
+            ],
+            "title": "CurvePoint",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "seg_id": {
+            "title": "Seg Id",
+            "type": "string"
+          },
+          "speed": {
+            "anyOf": [
+              {
+                "maximum": 100,
+                "minimum": 0.01,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Speed"
+          },
+          "curve_name": {
+            "anyOf": [
+              {
+                "enum": [
+                  "Hero",
+                  "Montage",
+                  "Bullet",
+                  "JumpCut",
+                  "FlashIn",
+                  "FlashOut"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Curve Name"
+          },
+          "curve_points": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/$defs/CurvePoint"
+                },
+                "maxItems": 50,
+                "minItems": 2,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Curve Points"
+          },
+          "expected_content_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Content Sha256"
+          }
+        },
+        "required": [
+          "ref",
+          "seg_id"
+        ],
+        "title": "set_native_clip_speedArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "add_native_subtitles",
+      "description": "Add explicit sentence-level subtitle cues to a NEW native project copy. Each cue has text/start/duration in timeline SECONDS. Cues must not overlap; vendor selects subtitle track(s). Verifies saved text, ranges and existing content. This is not ASR. Batch failure leaves only an unverified copy, not a partially accepted result; inspect the receipt before retrying.",
+      "inputSchema": {
+        "$defs": {
+          "SubtitleCue": {
+            "additionalProperties": false,
+            "properties": {
+              "start": {
+                "minimum": 0,
+                "title": "Start",
+                "type": "number"
+              },
+              "duration": {
+                "exclusiveMinimum": 0,
+                "title": "Duration",
+                "type": "number"
+              },
+              "text": {
+                "maxLength": 10000,
+                "minLength": 1,
+                "title": "Text",
+                "type": "string"
+              }
+            },
+            "required": [
+              "start",
+              "duration",
+              "text"
+            ],
+            "title": "SubtitleCue",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "cues": {
+            "items": {
+              "$ref": "#/$defs/SubtitleCue"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Cues",
+            "type": "array"
+          },
+          "expected_content_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Content Sha256"
+          }
+        },
+        "required": [
+          "ref",
+          "cues"
+        ],
+        "title": "add_native_subtitlesArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "split_native_clip",
+      "description": "Split an existing encrypted/native draft through vendor lyra-cli. ALWAYS duplicates into a new native project first; source is never patched. points are SECONDS relative to the segment, or timeline-absolute with absolute=true, strictly inside. Use seg_id/hash from get_native_draft or current-project read. Returns original/new IDs, exact saved ranges, output_ref/path and catalog warnings. It does not open/reload the UI or export video; do not retry blindly after an uncertain result.",
+      "inputSchema": {
+        "properties": {
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "seg_id": {
+            "title": "Seg Id",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Points",
+            "type": "array"
+          },
+          "absolute": {
+            "default": false,
+            "title": "Absolute",
+            "type": "boolean"
+          },
+          "expected_content_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Content Sha256"
+          }
+        },
+        "required": [
+          "ref",
+          "seg_id",
+          "points"
+        ],
+        "title": "split_native_clipArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "prepare_native_copy",
+      "description": "After fully exiting Jianying, prepare a successful native edit copy for opening. Repairs only that receipt-proven copy's project identity and root content mirror plus its own native catalog entry, retaining original-byte backups and reporting actual output encoding (metadata may become plain JSON). Never patches source projects or splits more clips. Refuses changed copies or a running editor. Catalog readback is not UI-open acceptance.",
+      "inputSchema": {
+        "properties": {
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "expected_content_sha256": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Content Sha256"
+          }
+        },
+        "required": [
+          "ref"
+        ],
+        "title": "prepare_native_copyArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "extract_frame",
+      "description": "Read an actual source frame and return its image to the agent; at is source seconds. Max width 1280.",
+      "inputSchema": {
+        "properties": {
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "at": {
+            "default": 0,
+            "minimum": 0,
+            "title": "At",
+            "type": "number"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "extract_frameArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "create_project",
+      "description": "Create an empty editable timeline. Add tracks and clips with the returned project_id.",
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "width": {
+            "default": 1080,
+            "maximum": 7680,
+            "minimum": 16,
+            "multipleOf": 2,
+            "title": "Width",
+            "type": "integer"
+          },
+          "height": {
+            "default": 1920,
+            "maximum": 7680,
+            "minimum": 16,
+            "multipleOf": 2,
+            "title": "Height",
+            "type": "integer"
+          },
+          "fps": {
+            "default": 30,
+            "enum": [
+              24,
+              25,
+              30,
+              50,
+              60
+            ],
+            "title": "Fps",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "create_projectArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "list_projects",
+      "description": "List service-created projects in ID order; this does not enumerate the user's Jianying drafts.",
+      "inputSchema": {
+        "properties": {
+          "offset": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 200,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "list_projectsArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_project",
+      "description": "Inspect revision, layer order, stable clip IDs and paginated edit state. Raw times are integer microseconds.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 200,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "title": "get_projectArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "add_track",
+      "description": "Add a video/audio/text track. Later visual tracks are above earlier tracks; images use video tracks.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "video",
+              "audio",
+              "text",
+              "sticker",
+              "effect",
+              "filter"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "kind",
+          "name"
+        ],
+        "title": "add_trackArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "reorder_track",
+      "description": "Move a track to a zero-based layer index, preserving all clips. Higher visual indices appear above lower ones.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "track_id": {
+            "title": "Track Id",
+            "type": "string"
+          },
+          "index": {
+            "minimum": 0,
+            "title": "Index",
+            "type": "integer"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "track_id",
+          "index"
+        ],
+        "title": "reorder_trackArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "add_video_clip",
+      "description": "Place video on a video track. start is timeline seconds; source_duration is source seconds before speed.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "track_id": {
+            "title": "Track Id",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "start": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Start",
+            "type": "number"
+          },
+          "source_in": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Source In",
+            "type": "number"
+          },
+          "source_duration": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source Duration"
+          },
+          "speed": {
+            "default": 1,
+            "exclusiveMinimum": 0,
+            "maximum": 100,
+            "title": "Speed",
+            "type": "number"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "track_id",
+          "path"
+        ],
+        "title": "add_video_clipArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "add_audio_clip",
+      "description": "Place audio on an audio track, including an audio stream from a video file; source_duration is before speed.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "track_id": {
+            "title": "Track Id",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "start": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Start",
+            "type": "number"
+          },
+          "source_in": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Source In",
+            "type": "number"
+          },
+          "source_duration": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source Duration"
+          },
+          "speed": {
+            "default": 1,
+            "exclusiveMinimum": 0,
+            "maximum": 100,
+            "title": "Speed",
+            "type": "number"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "track_id",
+          "path"
+        ],
+        "title": "add_audio_clipArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "add_image_clip",
+      "description": "Place a still image on a video track for an explicit timeline duration in seconds.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "track_id": {
+            "title": "Track Id",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "duration": {
+            "exclusiveMinimum": 0,
+            "title": "Duration",
+            "type": "number"
+          },
+          "start": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Start",
+            "type": "number"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "track_id",
+          "path",
+          "duration"
+        ],
+        "title": "add_image_clipArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "add_text_clip",
+      "description": "Add editable native text. Use set_text_style and set_clip_transform to format/place it.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "track_id": {
+            "title": "Track Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "duration": {
+            "exclusiveMinimum": 0,
+            "title": "Duration",
+            "type": "number"
+          },
+          "start": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Start",
+            "type": "number"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "track_id",
+          "text",
+          "duration"
+        ],
+        "title": "add_text_clipArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "import_subtitles",
+      "description": "Import a UTF-8 SRT as editable native text clips in one atomic operation; overlapping cues are rejected.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "track_id": {
+            "title": "Track Id",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Offset",
+            "type": "number"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "track_id",
+          "path"
+        ],
+        "title": "import_subtitlesArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "trim_clip",
+      "description": "Trim video/audio using absolute source [in,out) seconds. Keep timeline start; duration follows current speed. No ripple.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "source_in": {
+            "minimum": 0,
+            "title": "Source In",
+            "type": "number"
+          },
+          "source_out": {
+            "exclusiveMinimum": 0,
+            "title": "Source Out",
+            "type": "number"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "source_in",
+          "source_out"
+        ],
+        "title": "trim_clipArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "split_clip",
+      "description": "Split a plain clip at absolute timeline seconds. Original ID stays on the left; return a new right ID.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "at": {
+            "minimum": 0,
+            "title": "At",
+            "type": "number"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "at"
+        ],
+        "title": "split_clipArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "move_clip",
+      "description": "Move a clip to an absolute timeline start, optionally to another compatible track. No ripple or source trim.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "start": {
+            "minimum": 0,
+            "title": "Start",
+            "type": "number"
+          },
+          "track_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Track Id"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "start"
+        ],
+        "title": "move_clipArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "remove_clip",
+      "description": "Remove a service-project clip atomically. ripple=true shifts subsequent clips on the SAME track by its duration; other tracks, sources and saved snapshots stay unchanged. Default keeps gaps.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          },
+          "ripple": {
+            "default": false,
+            "title": "Ripple",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id"
+        ],
+        "title": "remove_clipArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_clip_duration",
+      "description": "Set image/text/sticker/effect/filter duration; video/audio duration is controlled through source trimming and speed.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "duration": {
+            "exclusiveMinimum": 0,
+            "title": "Duration",
+            "type": "number"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "duration"
+        ],
+        "title": "set_clip_durationArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_clip_transform",
+      "description": "Patch visual transform. Omitted fields stay unchanged. x/y are normalized around center (+y up); scale is a factor.",
+      "inputSchema": {
+        "$defs": {
+          "TransformPatch": {
+            "additionalProperties": false,
+            "properties": {
+              "x": {
+                "anyOf": [
+                  {
+                    "maximum": 10,
+                    "minimum": -10,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "X"
+              },
+              "y": {
+                "anyOf": [
+                  {
+                    "maximum": 10,
+                    "minimum": -10,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Y"
+              },
+              "scale_x": {
+                "anyOf": [
+                  {
+                    "exclusiveMinimum": 0,
+                    "maximum": 100,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Scale X"
+              },
+              "scale_y": {
+                "anyOf": [
+                  {
+                    "exclusiveMinimum": 0,
+                    "maximum": 100,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Scale Y"
+              },
+              "rotation": {
+                "anyOf": [
+                  {
+                    "maximum": 3600,
+                    "minimum": -3600,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Rotation"
+              },
+              "opacity": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Opacity"
+              },
+              "flip_horizontal": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Flip Horizontal"
+              },
+              "flip_vertical": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Flip Vertical"
+              },
+              "fit": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      "contain",
+                      "cover"
+                    ],
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Fit"
+              }
+            },
+            "title": "TransformPatch",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "transform": {
+            "$ref": "#/$defs/TransformPatch"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "transform"
+        ],
+        "title": "set_clip_transformArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_clip_speed",
+      "description": "Set constant video/audio speed; preserve source interval and timeline start, recalculate duration. No ripple.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "speed": {
+            "exclusiveMinimum": 0,
+            "maximum": 100,
+            "title": "Speed",
+            "type": "number"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "speed"
+        ],
+        "title": "set_clip_speedArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_clip_audio",
+      "description": "Set volume (0 mute, 1 original) and fades in timeline seconds. Video supports volume; use an audio clip for fades.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "volume": {
+            "default": 1,
+            "maximum": 10,
+            "minimum": 0,
+            "title": "Volume",
+            "type": "number"
+          },
+          "fade_in": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Fade In",
+            "type": "number"
+          },
+          "fade_out": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Fade Out",
+            "type": "number"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id"
+        ],
+        "title": "set_clip_audioArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_text_style",
+      "description": "Patch editable text style and optionally replace text. Omitted style fields stay unchanged; size is native Jianying units.",
+      "inputSchema": {
+        "$defs": {
+          "TextStylePatch": {
+            "additionalProperties": false,
+            "properties": {
+              "size": {
+                "anyOf": [
+                  {
+                    "exclusiveMinimum": 0,
+                    "maximum": 200,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Size"
+              },
+              "color": {
+                "anyOf": [
+                  {
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Color"
+              },
+              "bold": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Bold"
+              },
+              "italic": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Italic"
+              },
+              "align": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      0,
+                      1,
+                      2
+                    ],
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Align"
+              },
+              "border_width": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Border Width"
+              },
+              "border_color": {
+                "anyOf": [
+                  {
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Border Color"
+              },
+              "underline": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Underline"
+              },
+              "vertical": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Vertical"
+              },
+              "alpha": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Alpha"
+              },
+              "border_alpha": {
+                "anyOf": [
+                  {
+                    "maximum": 1,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Border Alpha"
+              },
+              "letter_spacing": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": -100,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Letter Spacing"
+              },
+              "line_spacing": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": -100,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Line Spacing"
+              },
+              "auto_wrapping": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Auto Wrapping"
+              },
+              "max_line_width": {
+                "anyOf": [
+                  {
+                    "exclusiveMinimum": 0,
+                    "maximum": 1,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Max Line Width"
+              }
+            },
+            "title": "TextStylePatch",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "style": {
+            "$ref": "#/$defs/TextStylePatch"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Text"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "style"
+        ],
+        "title": "set_text_styleArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "list_transitions",
+      "description": "Discover exact transition names from the pinned SDK. Catalog membership does not prove local resource availability.",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "default": "",
+            "title": "Query",
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 200,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "list_transitionsArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_transition",
+      "description": "Set an outgoing transition to the next adjacent visual clip. name=null clears it; use list_transitions for exact names.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Name"
+          },
+          "duration": {
+            "default": 0.5,
+            "minimum": 0,
+            "title": "Duration",
+            "type": "number"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id"
+        ],
+        "title": "set_transitionArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_keyframes",
+      "description": "Replace one property's linear keyframes. Point times are relative clip seconds; [] clears that property's keyframes.",
+      "inputSchema": {
+        "$defs": {
+          "KeyframePoint": {
+            "additionalProperties": false,
+            "properties": {
+              "time": {
+                "minimum": 0,
+                "title": "Time",
+                "type": "number"
+              },
+              "value": {
+                "title": "Value",
+                "type": "number"
+              }
+            },
+            "required": [
+              "time",
+              "value"
+            ],
+            "title": "KeyframePoint",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "property_name": {
+            "enum": [
+              "position_x",
+              "position_y",
+              "rotation",
+              "scale_x",
+              "scale_y",
+              "alpha",
+              "volume",
+              "uniform_scale",
+              "brightness",
+              "contrast",
+              "saturation"
+            ],
+            "title": "Property Name",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/$defs/KeyframePoint"
+            },
+            "maxItems": 500,
+            "title": "Points",
+            "type": "array"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "property_name",
+          "points"
+        ],
+        "title": "set_keyframesArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "save_draft",
+      "description": "Compile an immutable new editable draft snapshot. Does not install it into Jianying or claim UI/export acceptance.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "title": "save_draftArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "export_video",
+      "description": "Start native MP4 export of a saved snapshot. Returns a durable job_id; poll get_job. Output stays in the workspace.",
+      "inputSchema": {
+        "$defs": {
+          "ExportOptions": {
+            "additionalProperties": false,
+            "properties": {
+              "width": {
+                "anyOf": [
+                  {
+                    "maximum": 7680,
+                    "minimum": 16,
+                    "multipleOf": 2,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Width"
+              },
+              "height": {
+                "anyOf": [
+                  {
+                    "maximum": 7680,
+                    "minimum": 16,
+                    "multipleOf": 2,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Height"
+              },
+              "fps": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      24,
+                      25,
+                      30,
+                      50,
+                      60
+                    ],
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Fps"
+              },
+              "hard_encode": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      0,
+                      1
+                    ],
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Hard Encode"
+              },
+              "quality": {
+                "anyOf": [
+                  {
+                    "maximum": 2147483647,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Raw engine numeric option; 0 is default. Other values need version-specific verification.",
+                "title": "Quality"
+              },
+              "color_space": {
+                "anyOf": [
+                  {
+                    "maximum": 2147483647,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Raw engine numeric option; 0 is default. Does not certify HDR/color correctness.",
+                "title": "Color Space"
+              },
+              "mp4": {
+                "anyOf": [
+                  {
+                    "maximum": 2147483647,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Raw engine numeric option; 0 is default. Other values need version-specific verification.",
+                "title": "Mp4"
+              }
+            },
+            "title": "ExportOptions",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "draft_id": {
+            "title": "Draft Id",
+            "type": "string"
+          },
+          "codec": {
+            "default": "h264",
+            "enum": [
+              "h264",
+              "hevc"
+            ],
+            "title": "Codec",
+            "type": "string"
+          },
+          "bitrate": {
+            "default": "4M",
+            "title": "Bitrate",
+            "type": "string"
+          },
+          "timeout": {
+            "default": 900,
+            "maximum": 3600,
+            "minimum": 10,
+            "title": "Timeout",
+            "type": "integer"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ExportOptions"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "draft_id"
+        ],
+        "title": "export_videoArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_job",
+      "description": "Read job state, logs and artifacts. Terminal statuses: succeeded, failed, cancelled, interrupted.",
+      "inputSchema": {
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "title": "get_jobArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "cancel_job",
+      "description": "Request cancellation. Keep polling until terminal; cancellation_requested is not a confirmed cancelled state.",
+      "inputSchema": {
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "title": "cancel_jobArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "validate_output",
+      "description": "Re-probe and fully decode a succeeded job's MP4; check canvas and duration against the saved timeline.",
+      "inputSchema": {
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "title": "validate_outputArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "list_resources",
+      "description": "Discover static SDK categories/names, IDs, VIP flags and normalized effect parameters. Not an online library.",
+      "inputSchema": {
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "enum": [
+                  "font",
+                  "video_intro",
+                  "video_outro",
+                  "video_group",
+                  "text_intro",
+                  "text_outro",
+                  "text_loop",
+                  "video_effect",
+                  "character_effect",
+                  "filter",
+                  "mask",
+                  "mix_mode",
+                  "audio_scene",
+                  "tone",
+                  "speech_to_song",
+                  "transition"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Category"
+          },
+          "query": {
+            "default": "",
+            "title": "Query",
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 200,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "list_resourcesArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "check_resource_availability",
+      "description": "Check a catalog entry and bounded local cache name/ID matches in allowed roots. Does not certify rendering.",
+      "inputSchema": {
+        "properties": {
+          "category": {
+            "enum": [
+              "font",
+              "video_intro",
+              "video_outro",
+              "video_group",
+              "text_intro",
+              "text_outro",
+              "text_loop",
+              "video_effect",
+              "character_effect",
+              "filter",
+              "mask",
+              "mix_mode",
+              "audio_scene",
+              "tone",
+              "speech_to_song",
+              "transition"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "cache_roots": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 10,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Cache Roots"
+          }
+        },
+        "required": [
+          "category",
+          "name"
+        ],
+        "title": "check_resource_availabilityArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_text_font",
+      "description": "Set a catalog font on a text clip; name=null restores the default font.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "name"
+        ],
+        "title": "set_text_fontArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_text_effect",
+      "description": "Apply a native fancy-text effect ID inspected from a template; null removes. Resource must be available locally.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "effect_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "pattern": "^[\\w.-]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effect Id"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "effect_id"
+        ],
+        "title": "set_text_effectArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_text_bubble",
+      "description": "Apply a template-inspected text bubble effect/resource pair; both null removes the bubble.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "effect_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "pattern": "^[\\w.-]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effect Id"
+          },
+          "resource_id": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "pattern": "^[\\w.-]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Resource Id"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "effect_id"
+        ],
+        "title": "set_text_bubbleArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_text_background",
+      "description": "Replace text background settings (color, rounding, dimensions, offsets); null clears.",
+      "inputSchema": {
+        "$defs": {
+          "TextBackground": {
+            "additionalProperties": false,
+            "properties": {
+              "color": {
+                "pattern": "^#[0-9a-fA-F]{6}$",
+                "title": "Color",
+                "type": "string"
+              },
+              "style": {
+                "default": 1,
+                "enum": [
+                  1,
+                  2
+                ],
+                "title": "Style",
+                "type": "integer"
+              },
+              "alpha": {
+                "default": 1,
+                "maximum": 1,
+                "minimum": 0,
+                "title": "Alpha",
+                "type": "number"
+              },
+              "round_radius": {
+                "default": 0,
+                "maximum": 1,
+                "minimum": 0,
+                "title": "Round Radius",
+                "type": "number"
+              },
+              "height": {
+                "default": 0.14,
+                "maximum": 1,
+                "minimum": 0,
+                "title": "Height",
+                "type": "number"
+              },
+              "width": {
+                "default": 0.14,
+                "maximum": 1,
+                "minimum": 0,
+                "title": "Width",
+                "type": "number"
+              },
+              "horizontal_offset": {
+                "default": 0.5,
+                "maximum": 1,
+                "minimum": 0,
+                "title": "Horizontal Offset",
+                "type": "number"
+              },
+              "vertical_offset": {
+                "default": 0.5,
+                "maximum": 1,
+                "minimum": 0,
+                "title": "Vertical Offset",
+                "type": "number"
+              }
+            },
+            "required": [
+              "color"
+            ],
+            "title": "TextBackground",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "background": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextBackground"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "background"
+        ],
+        "title": "set_text_backgroundArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_text_shadow",
+      "description": "Replace text shadow settings; null clears.",
+      "inputSchema": {
+        "$defs": {
+          "TextShadow": {
+            "additionalProperties": false,
+            "properties": {
+              "color": {
+                "default": "#000000",
+                "pattern": "^#[0-9a-fA-F]{6}$",
+                "title": "Color",
+                "type": "string"
+              },
+              "alpha": {
+                "default": 0.9,
+                "maximum": 1,
+                "minimum": 0,
+                "title": "Alpha",
+                "type": "number"
+              },
+              "diffuse": {
+                "default": 15,
+                "maximum": 100,
+                "minimum": 0,
+                "title": "Diffuse",
+                "type": "number"
+              },
+              "distance": {
+                "default": 5,
+                "maximum": 100,
+                "minimum": 0,
+                "title": "Distance",
+                "type": "number"
+              },
+              "angle": {
+                "default": -45,
+                "maximum": 180,
+                "minimum": -180,
+                "title": "Angle",
+                "type": "number"
+              }
+            },
+            "title": "TextShadow",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "shadow": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TextShadow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "shadow"
+        ],
+        "title": "set_text_shadowArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_clip_animation",
+      "description": "Replace one clip animation category using exact catalog name and duration in seconds; name=null clears that category.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "video_intro",
+              "video_outro",
+              "video_group",
+              "text_intro",
+              "text_outro",
+              "text_loop"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "duration": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Duration"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "category",
+          "name"
+        ],
+        "title": "set_clip_animationArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "add_clip_effect",
+      "description": "Add video/character/filter or audio scene/tone/speech-to-song effect. Returns effect_id for later update/removal.",
+      "inputSchema": {
+        "$defs": {
+          "Effect": {
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "string"
+              },
+              "category": {
+                "enum": [
+                  "video_effect",
+                  "character_effect",
+                  "filter",
+                  "audio_scene",
+                  "tone",
+                  "speech_to_song"
+                ],
+                "title": "Category",
+                "type": "string"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "params": {
+                "items": {
+                  "anyOf": [
+                    {
+                      "maximum": 100,
+                      "minimum": 0,
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "maxItems": 50,
+                "title": "Params",
+                "type": "array"
+              },
+              "intensity": {
+                "default": 100,
+                "maximum": 100,
+                "minimum": 0,
+                "title": "Intensity",
+                "type": "number"
+              }
+            },
+            "required": [
+              "category",
+              "name"
+            ],
+            "title": "Effect",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "effect": {
+            "$ref": "#/$defs/Effect"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "effect"
+        ],
+        "title": "add_clip_effectArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "update_clip_effect",
+      "description": "Replace an effect's category/name/params/intensity while preserving its ID; also edits effect/filter track clips.",
+      "inputSchema": {
+        "$defs": {
+          "Effect": {
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "string"
+              },
+              "category": {
+                "enum": [
+                  "video_effect",
+                  "character_effect",
+                  "filter",
+                  "audio_scene",
+                  "tone",
+                  "speech_to_song"
+                ],
+                "title": "Category",
+                "type": "string"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "params": {
+                "items": {
+                  "anyOf": [
+                    {
+                      "maximum": 100,
+                      "minimum": 0,
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "maxItems": 50,
+                "title": "Params",
+                "type": "array"
+              },
+              "intensity": {
+                "default": 100,
+                "maximum": 100,
+                "minimum": 0,
+                "title": "Intensity",
+                "type": "number"
+              }
+            },
+            "required": [
+              "category",
+              "name"
+            ],
+            "title": "Effect",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "effect_id": {
+            "title": "Effect Id",
+            "type": "string"
+          },
+          "effect": {
+            "$ref": "#/$defs/Effect"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "effect_id",
+          "effect"
+        ],
+        "title": "update_clip_effectArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "remove_clip_effect",
+      "description": "Remove an attached effect by ID. For independent effect/filter clips use remove_clip.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "effect_id": {
+            "title": "Effect Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "effect_id"
+        ],
+        "title": "remove_clip_effectArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_clip_mask",
+      "description": "Replace a native mask; null clears. center_x/y are SOURCE PIXELS; size/rect_width are normalized; feather 0..100.",
+      "inputSchema": {
+        "$defs": {
+          "Mask": {
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "center_x": {
+                "default": 0,
+                "title": "Center X",
+                "type": "number"
+              },
+              "center_y": {
+                "default": 0,
+                "title": "Center Y",
+                "type": "number"
+              },
+              "size": {
+                "default": 0.5,
+                "exclusiveMinimum": 0,
+                "maximum": 10,
+                "title": "Size",
+                "type": "number"
+              },
+              "rotation": {
+                "default": 0,
+                "title": "Rotation",
+                "type": "number"
+              },
+              "feather": {
+                "default": 0,
+                "maximum": 100,
+                "minimum": 0,
+                "title": "Feather",
+                "type": "number"
+              },
+              "invert": {
+                "default": false,
+                "title": "Invert",
+                "type": "boolean"
+              },
+              "rect_width": {
+                "anyOf": [
+                  {
+                    "exclusiveMinimum": 0,
+                    "maximum": 10,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Rect Width"
+              },
+              "round_corner": {
+                "anyOf": [
+                  {
+                    "maximum": 100,
+                    "minimum": 0,
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Round Corner"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "title": "Mask",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "mask": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Mask"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "mask"
+        ],
+        "title": "set_clip_maskArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_clip_chroma",
+      "description": "Replace color-key settings; null clears. Key color is #RRGGBBAA. This is not AI/person segmentation.",
+      "inputSchema": {
+        "$defs": {
+          "Chroma": {
+            "additionalProperties": false,
+            "properties": {
+              "color": {
+                "pattern": "^#[0-9a-fA-F]{8}$",
+                "title": "Color",
+                "type": "string"
+              },
+              "intensity": {
+                "default": 20,
+                "maximum": 100,
+                "minimum": 0,
+                "title": "Intensity",
+                "type": "number"
+              },
+              "shadow": {
+                "default": 0,
+                "maximum": 100,
+                "minimum": 0,
+                "title": "Shadow",
+                "type": "number"
+              },
+              "edge_smooth": {
+                "default": 0,
+                "maximum": 100,
+                "minimum": 0,
+                "title": "Edge Smooth",
+                "type": "number"
+              },
+              "spill": {
+                "default": 0,
+                "maximum": 100,
+                "minimum": 0,
+                "title": "Spill",
+                "type": "number"
+              }
+            },
+            "required": [
+              "color"
+            ],
+            "title": "Chroma",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "chroma": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Chroma"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "chroma"
+        ],
+        "title": "set_clip_chromaArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_clip_mix_mode",
+      "description": "Set a catalog blend mode for video/image; null clears.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "name"
+        ],
+        "title": "set_clip_mix_modeArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_clip_background",
+      "description": "Set blurred/color canvas fill for a bottom video track clip; null clears. Color is #RRGGBBAA.",
+      "inputSchema": {
+        "$defs": {
+          "Background": {
+            "additionalProperties": false,
+            "properties": {
+              "fill_type": {
+                "enum": [
+                  "blur",
+                  "color"
+                ],
+                "title": "Fill Type",
+                "type": "string"
+              },
+              "blur": {
+                "default": 0.0625,
+                "maximum": 1,
+                "minimum": 0,
+                "title": "Blur",
+                "type": "number"
+              },
+              "color": {
+                "default": "#00000000",
+                "pattern": "^#[0-9a-fA-F]{8}$",
+                "title": "Color",
+                "type": "string"
+              }
+            },
+            "required": [
+              "fill_type"
+            ],
+            "title": "Background",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "background": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Background"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "background"
+        ],
+        "title": "set_clip_backgroundArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "set_clip_crop",
+      "description": "Replace source rectangle crop; left/top/right/bottom are 0..1, origin top-left. null restores full source.",
+      "inputSchema": {
+        "$defs": {
+          "Crop": {
+            "additionalProperties": false,
+            "properties": {
+              "left": {
+                "default": 0,
+                "exclusiveMaximum": 1,
+                "minimum": 0,
+                "title": "Left",
+                "type": "number"
+              },
+              "top": {
+                "default": 0,
+                "exclusiveMaximum": 1,
+                "minimum": 0,
+                "title": "Top",
+                "type": "number"
+              },
+              "right": {
+                "default": 1,
+                "exclusiveMinimum": 0,
+                "maximum": 1,
+                "title": "Right",
+                "type": "number"
+              },
+              "bottom": {
+                "default": 1,
+                "exclusiveMinimum": 0,
+                "maximum": 1,
+                "title": "Bottom",
+                "type": "number"
+              }
+            },
+            "title": "Crop",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "clip_id": {
+            "title": "Clip Id",
+            "type": "string"
+          },
+          "crop": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/Crop"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "clip_id",
+          "crop"
+        ],
+        "title": "set_clip_cropArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "add_sticker_clip",
+      "description": "Add a native sticker by template-inspected resource ID to a sticker track; resource availability requires native verification.",
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "track_id": {
+            "title": "Track Id",
+            "type": "string"
+          },
+          "resource_id": {
+            "maxLength": 256,
+            "minLength": 1,
+            "pattern": "^[\\w.-]+$",
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "duration": {
+            "exclusiveMinimum": 0,
+            "title": "Duration",
+            "type": "number"
+          },
+          "start": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Start",
+            "type": "number"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "track_id",
+          "resource_id",
+          "duration"
+        ],
+        "title": "add_sticker_clipArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "add_effect_clip",
+      "description": "Add an independent global effect/filter clip. Use an effect track for video/character effects or filter track for filters.",
+      "inputSchema": {
+        "$defs": {
+          "Effect": {
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "title": "Id",
+                "type": "string"
+              },
+              "category": {
+                "enum": [
+                  "video_effect",
+                  "character_effect",
+                  "filter",
+                  "audio_scene",
+                  "tone",
+                  "speech_to_song"
+                ],
+                "title": "Category",
+                "type": "string"
+              },
+              "name": {
+                "title": "Name",
+                "type": "string"
+              },
+              "params": {
+                "items": {
+                  "anyOf": [
+                    {
+                      "maximum": 100,
+                      "minimum": 0,
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "maxItems": 50,
+                "title": "Params",
+                "type": "array"
+              },
+              "intensity": {
+                "default": 100,
+                "maximum": 100,
+                "minimum": 0,
+                "title": "Intensity",
+                "type": "number"
+              }
+            },
+            "required": [
+              "category",
+              "name"
+            ],
+            "title": "Effect",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "project_id": {
+            "title": "Project Id",
+            "type": "string"
+          },
+          "track_id": {
+            "title": "Track Id",
+            "type": "string"
+          },
+          "effect": {
+            "$ref": "#/$defs/Effect"
+          },
+          "duration": {
+            "exclusiveMinimum": 0,
+            "title": "Duration",
+            "type": "number"
+          },
+          "start": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Start",
+            "type": "number"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "project_id",
+          "track_id",
+          "effect",
+          "duration"
+        ],
+        "title": "add_effect_clipArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "import_local_template",
+      "description": "Copy a local plaintext draft_content JSON into independent template state; source is never edited. Decrypt first if necessary.",
+      "inputSchema": {
+        "properties": {
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "name": {
+            "default": "Imported template",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "import_local_templateArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "list_templates",
+      "description": "List service-owned imported template IDs and revisions; independent of normal editable projects.",
+      "inputSchema": {
+        "properties": {
+          "offset": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 200,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "list_templatesArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_template",
+      "description": "Inspect imported template tracks and segment IDs. Timeranges ending _timerange use integer microseconds.",
+      "inputSchema": {
+        "properties": {
+          "template_id": {
+            "title": "Template Id",
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 200,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "template_id"
+        ],
+        "title": "get_templateArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "inspect_template_resources",
+      "description": "Extract font/fancy-text/bubble/sticker/effect IDs from a local template; does not download or certify resources.",
+      "inputSchema": {
+        "properties": {
+          "template_id": {
+            "title": "Template Id",
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 50,
+            "maximum": 200,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "template_id"
+        ],
+        "title": "inspect_template_resourcesArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "duplicate_template",
+      "description": "Create an independent copy of service-owned template state, preserving the original template.",
+      "inputSchema": {
+        "properties": {
+          "template_id": {
+            "title": "Template Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "template_id",
+          "name"
+        ],
+        "title": "duplicate_templateArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "replace_template_material_by_name",
+      "description": "Replace a uniquely named template media asset in all referencing segments. Preserves segment source ranges/durations; images use kind=video.",
+      "inputSchema": {
+        "properties": {
+          "template_id": {
+            "title": "Template Id",
+            "type": "string"
+          },
+          "material_name": {
+            "title": "Material Name",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "video",
+              "audio"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "replace_crop": {
+            "default": false,
+            "title": "Replace Crop",
+            "type": "boolean"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "template_id",
+          "material_name",
+          "path",
+          "kind"
+        ],
+        "title": "replace_template_material_by_nameArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "replace_template_segment",
+      "description": "Replace one template media segment using stable IDs. Supports SDK shrink/extend modes; variable-speed segments are rejected.",
+      "inputSchema": {
+        "properties": {
+          "template_id": {
+            "title": "Template Id",
+            "type": "string"
+          },
+          "track_id": {
+            "title": "Track Id",
+            "type": "string"
+          },
+          "segment_id": {
+            "title": "Segment Id",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "source_in": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Source In",
+            "type": "number"
+          },
+          "source_duration": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source Duration"
+          },
+          "shrink": {
+            "default": "cut_tail",
+            "enum": [
+              "cut_head",
+              "cut_tail",
+              "cut_tail_align",
+              "shrink"
+            ],
+            "title": "Shrink",
+            "type": "string"
+          },
+          "extend": {
+            "default": "cut_material_tail",
+            "enum": [
+              "cut_material_tail",
+              "extend_head",
+              "extend_tail",
+              "push_tail"
+            ],
+            "title": "Extend",
+            "type": "string"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "template_id",
+          "track_id",
+          "segment_id",
+          "path"
+        ],
+        "title": "replace_template_segmentArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "replace_template_text",
+      "description": "Replace ordinary or multi-part template text while preserving native styling. Use a list for multi-part text templates.",
+      "inputSchema": {
+        "properties": {
+          "template_id": {
+            "title": "Template Id",
+            "type": "string"
+          },
+          "track_id": {
+            "title": "Track Id",
+            "type": "string"
+          },
+          "segment_id": {
+            "title": "Segment Id",
+            "type": "string"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Text"
+          },
+          "recalc_style": {
+            "default": true,
+            "title": "Recalc Style",
+            "type": "boolean"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "template_id",
+          "track_id",
+          "segment_id",
+          "text"
+        ],
+        "title": "replace_template_textArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "import_template_track",
+      "description": "Copy a video/audio/text track between template workspaces with media/effect references. SDK IDs are preserved; duplicate IDs are rejected.",
+      "inputSchema": {
+        "properties": {
+          "template_id": {
+            "title": "Template Id",
+            "type": "string"
+          },
+          "source_template_id": {
+            "title": "Source Template Id",
+            "type": "string"
+          },
+          "source_track_id": {
+            "title": "Source Track Id",
+            "type": "string"
+          },
+          "offset": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Offset",
+            "type": "number"
+          },
+          "new_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "New Name"
+          },
+          "at_index": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "At Index"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "template_id",
+          "source_template_id",
+          "source_track_id"
+        ],
+        "title": "import_template_trackArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "save_template_draft",
+      "description": "Save a new immutable draft snapshot from template state, compatible with export_video. Does not overwrite source or install into Jianying.",
+      "inputSchema": {
+        "properties": {
+          "template_id": {
+            "title": "Template Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Expected Revision"
+          }
+        },
+        "required": [
+          "template_id"
+        ],
+        "title": "save_template_draftArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "convert_local_draft",
+      "description": "Convert one local draft content file into a NEW workspace artifact using native jy-draftc; never overwrite input. Downgrade requires target_version.",
+      "inputSchema": {
+        "properties": {
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "operation": {
+            "enum": [
+              "decrypt",
+              "encrypt",
+              "upgrade",
+              "downgrade"
+            ],
+            "title": "Operation",
+            "type": "string"
+          },
+          "target_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Target Version"
+          }
+        },
+        "required": [
+          "path",
+          "operation"
+        ],
+        "title": "convert_local_draftArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "check_local_draft",
+      "description": "Run native self-check against a local draft content sample. Read-only input; does not prove visual correctness.",
+      "inputSchema": {
+        "properties": {
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "check_local_draftArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "export_local_draft",
+      "description": "Snapshot and export a local plaintext draft using the persisted job queue. Encrypted drafts must first be decrypted.",
+      "inputSchema": {
+        "$defs": {
+          "ExportOptions": {
+            "additionalProperties": false,
+            "properties": {
+              "width": {
+                "anyOf": [
+                  {
+                    "maximum": 7680,
+                    "minimum": 16,
+                    "multipleOf": 2,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Width"
+              },
+              "height": {
+                "anyOf": [
+                  {
+                    "maximum": 7680,
+                    "minimum": 16,
+                    "multipleOf": 2,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Height"
+              },
+              "fps": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      24,
+                      25,
+                      30,
+                      50,
+                      60
+                    ],
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Fps"
+              },
+              "hard_encode": {
+                "anyOf": [
+                  {
+                    "enum": [
+                      0,
+                      1
+                    ],
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Hard Encode"
+              },
+              "quality": {
+                "anyOf": [
+                  {
+                    "maximum": 2147483647,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Raw engine numeric option; 0 is default. Other values need version-specific verification.",
+                "title": "Quality"
+              },
+              "color_space": {
+                "anyOf": [
+                  {
+                    "maximum": 2147483647,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Raw engine numeric option; 0 is default. Does not certify HDR/color correctness.",
+                "title": "Color Space"
+              },
+              "mp4": {
+                "anyOf": [
+                  {
+                    "maximum": 2147483647,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "description": "Raw engine numeric option; 0 is default. Other values need version-specific verification.",
+                "title": "Mp4"
+              }
+            },
+            "title": "ExportOptions",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "codec": {
+            "default": "h264",
+            "enum": [
+              "h264",
+              "hevc"
+            ],
+            "title": "Codec",
+            "type": "string"
+          },
+          "bitrate": {
+            "default": "4M",
+            "title": "Bitrate",
+            "type": "string"
+          },
+          "timeout": {
+            "default": 900,
+            "maximum": 3600,
+            "minimum": 10,
+            "title": "Timeout",
+            "type": "integer"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ExportOptions"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "export_local_draftArguments",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
+      }
+    }
+  ]
+}

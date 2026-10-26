@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "jy-edit": {
+      "command": "uv",
+      "args": [
+        "--directory", "G:/project/jy-draftc",
+        "run", "--frozen", "--no-sync", "jy-edit-mcp"
+      ],
+      "env": {
+        "PYTHONUTF8": "1",
+        "PYTHONIOENCODING": "utf-8",
+        "JY_EDIT_WORKSPACE": "G:/project/jy-draftc/.jy-edit-workspace",
+        "JY_EDIT_MEDIA_ROOTS": "[\"G:/project/jy-draftc\"]",
+        "JY_DRAFTC_EXE": "G:/project/jy-draftc/build/jy-draftc.exe",
+        "JY_INSTALL_DIR": "C:/Users/fortytwo/AppData/Local/JianyingPro/Apps/11.6.0.14552"
+      }
+    }
+  }
+}

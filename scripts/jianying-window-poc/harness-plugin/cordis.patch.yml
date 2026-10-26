@@ -1,0 +1,17 @@
+- insert:
+    - id: jianying-window-poc
+      name: '@local/dsh-jianying-window-poc'
+      inject: [profileContext]
+      config:
+        helper: !!js ctx.profileContext.dir + '/node_modules/@local/dsh-jianying-window-poc/runtime/window-host.exe'
+        evidenceDirectory: G:/project/jy-draftc/build/jianying-harness-poc
+        expectedHost: C:/Users/fortytwo/AppData/Local/Programs/DeepSeek Harness/DeepSeek Harness.exe
+        jianyingExecutable: C:/Users/fortytwo/AppData/Local/JianyingPro/Apps/10.6.0.14057/JianyingPro.exe
+        leaseSeconds: 1800
+        clientLeaseSeconds: 120
+        windowScanIntervalMs: 750
+        currentProject:
+          userDataDirectory: C:/Users/fortytwo/AppData/Local/JianyingPro/User Data
+          snapshotDirectory: G:/project/jy-draftc/build/jianying-current-project
+          draftConverter: G:/project/jy-draftc/build/jy-draftc.exe
+          converterRuntime: C:/Users/fortytwo/AppData/Local/JianyingPro/Apps/11.6.0.14552
